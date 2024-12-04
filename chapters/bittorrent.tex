@@ -1,0 +1,49 @@
+\chapter{Bittorrent}
+\label{cha:Bittorrent}
+
+\section{Relevanz}
+Statistiken des Unternehmens Sandvine belegen die weite Verbreitung des Bittorrent Protokolls und dessen Einfluss auf den globalen Internet-Datenverkehr.
+In der Region Asien-Pazifik ist das Bittorrent Protokoll auf Platz Eins in der Reihung der Applikationen mit dem höchsten Anteil an Upload-Verkehr. Mit einem Anteil von 19.11\%  macht das Protokoll fast ein Fünftel des gesamten Upload-Verkehrs in der Region aus. Der globale Anteil des Bittorrent Protokolls am Upload-Verkehr beträgt 9.7\%. Damit führt das Protokoll die Rangliste vor dem HTTP Protokoll an.
+Bittorrent übernimmt damit die Rolle als am das meisten verbreitete Peer-To-Peer Filesharing Protokoll.
+
+Verschiedene bekannte Unternehmen setzen auch auf das Bittorrent-Protokoll. So bietet die Linux-Distribution Ubuntu auf ihrer Website neben dem traditionellen Download des Betriebssystems, noch eine Bittorrent Version an mittels derer auch das Betriebssystem bezogen werden kann. Der Spielehersteller Wargaming verwendet für sein Spiel "World of Tanks" unter anderem, das Bittorrent-Protokoll um die nötigen Dateien den Nutzern zur Verfügung zu stellen.
+
+\section{Aufbau}
+Innerhalb des Bittorrent Protokolls gibt es verschiedene Akteure welche gemeinsam den Datenaustausch ermöglichen. Folgend werden diese Akteuere und wichtige Begriffe, welche im Protokoll enthalten, sind beschrieben. Als Basis dient die Spezifikation des Bittorrent Protokolls in der Version 1. 
+
+\subsection{Bencode}
+Bencode bezeichnet die Enkodierung mit der Metadaten im Bittorrent Protokoll übertragen und gespeichert werden. Der Name setzt sich aus "binary" und "encoded" zusammen. Wie der Name vermuten lässt, ist Bencode ein binär basiertes Format. Bencode kennt vier verschiedene Datentypen:
+\begin{itemize}
+    \item \textbf{Zahlen}
+    \item \textbf{Zeichenketten}
+    \item \textbf{Listen}
+    \item \textbf{Assoziative Listen}
+\end{itemize}
+
+\subsection{.torrent Datei}
+Eine .torrent Datei enthält alle relevanten Metadaten welche für den Datenaustausch mittels des Bittorrent Protokolls benötigt werden. Die in dieser Datei enthaltenen Metadaten, werden auch als "Torrent" bezeichnet. Enkodiert sind die Daten im bereits beschriebenen Bencode Format. Folgendes ist in den Metadaten einer .torrent Datei enthalten:
+
+\begin{itemize}
+    \item 
+\end{itemize}
+
+\subsection{Peer}
+Als Peer bezeichnet man einen Computer welcher mit anderen Computern über das Bittorrent Protokoll kommuniziert und Daten austauscht. Im Gegensatz zum klassichen Server-Client Modell, ist die Beziehung gleichwertig. Ein Peer ist sozusagen Client und Server zugleich. Eine Verbindung kann von und zu jedem Peer aufgebaut werden. 
+
+\subsection{Seeder und Leecher}
+Ein Peer im Bittorrent Protokoll wird in zwei Kategorien untergeteilt. Auf der einen Seite gibt es die Seeder (dt. Säer) und auf der anderen die Leecher (dt. Sauger). 
+Als Seeder bezeichnet man einen Peer welcher die in der .torrent Datei enthaltenen Dateien und Ordner vollständig heruntergeladen hat. Der Seeder stellt nun anderen Peers die Dateien zum Download zur Verfügung  (sogenanntes \emph{seeden}).  
+Der Leecher hat noch nicht, oder zumindest nicht vollständig die Dateien und Ordner des Torrents heruntergeladen. Er sucht aktiv nach Peers welche ihm diese Daten zur Verfügung stellen können. Das Herunterladen der Daten von einem anderen Peer wird als \emph{leeching} bezeichnet. Anzumerken ist, dass ein Leecher auch von anderen Leechern Daten herunterladen kann. 
+
+\subsection{Tracker}
+Ein Tracker vermittelt einen Peer mit einem anderen Peer. Er \emph{trackt} (dt. verfolgt) welche Peers aktuell einen Torrent seeden und leechen. Möchte ein Peer einen Torrent zu leechen beginnen, so muss dieser das dem Tracker kundgeben. Der Tracker übermittelt den Peer dann eine Liste von anderen Peers, mit denen eine Verbindung aufgebaut werden kann.
+Um einen neuen Torrent anderen Peers zur Verfügung stellen zu können, muss diesen bei einem Tracker registriert werden.
+Auf technischer Ebene ist ein Tracker ein schlichter Webserver. Die zum Tracker dazugehörige Website bietet im Regelfall folgende Funktionen an:
+\begin{itemize}
+    \item \textbf{Registrieren von Torrents} Eine neu erstellte .torrent Datei kann beim Tracker hochgeladen werden, und damit begint der Tracker Peers zu vermitteln. 
+    \item \textbf{Suche} Das Verzeichnis, aller dem Tracker bekannten Torrents, kann durchsucht werden. 
+    \item \textbf{Download einer .torrent Datei} die zu einem Torrent gehörende .torrent Datei wird zum Download angeboten. 
+\end{itemize}
+
+Über die zum Tracker gehörige Website können im Regelfall neue Torrents hinzugefügt werden. Zusätzlich dazu kann auf der Website nach allen, dem Tracker bekannten, Torrents gesucht werden. 
+Somit bildet ein Tracker eine zentrale Stelle, welche dem eigentlichen Prinzip von Peer-to-Peer widerspricht. Um diese Zentralität etwas zu entkräftigen, ist es üblich einen Torrent bei mehreren Trackern zu registrieren.

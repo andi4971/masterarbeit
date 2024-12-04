@@ -1,0 +1,100 @@
+\chapter{Implementierung}
+\label{cha:Implementierung}
+
+In diesem Kapitel wird die Implementierung des BitTorrent-Clients vorgestellt. Dazu wird zuerst auf den Aufbau der Implementierung eingegangen. Folgend wird die Implementierung der einzelnen Bestandteile näher erläutert. 
+
+\section{Aufbau}
+
+Der Aufbau der Implementierung ist in Abbildung \ref{fig:KlassenClient} ersichtlich. Die Abbildung zeigt die relevanten Klassen und deren Verhältnisse zueinander. Die zentrale Klasse ist hierbei der \emph{TorrentLoader}. Diese Klasse stellt die im Lösungsdesign beschriebene zentrale Einheit dar. Die \emph{TorrentLoader}-Klasse ist dafür zuständig, den Download des Torrents zu verwalten. Die einzelnen Komponenten, welche der \emph{TorrentLoader} benutzt, werden in den folgenden Abschnitten näher erläutert.  
+
+\begin{figure}[]
+    \centering
+    \includesvg[width=\textwidth]{bittorrentClientKlassen} %{CS0031}
+    \caption{Relevante Klassen des BitTorrent-Clients.}
+    \label{fig:KlassenClient}
+\end{figure}
+
+\section{Bencode-Parser}
+
+Die erste Komponente der Implementierung bildet der \emph{BencodeParser}. Dieser erfüllt die Aufgabe, eine beliebige Datei im Bencode-Format einzulesen und zu verarbeiten. Die Datei wird vom Parser soweit aufbereitet, dass jedes Element in einem Objekt zur Verfügung steht. Der \emph{ParsedDataExtractor} organisiert diese Objekte danach in Klassen, welche beispielsweise alle Metadaten enthalten. Da Elemente in Bencode beliebig tief verschachtelt werden können, ist der Parser auf rekursive Weise implementiert. Dies ermöglicht es, mit relativ wenig Code einen vollständigen Parser zu erstellen. Rekursiv bedeutet das, für (assoziative) Listen, welche verschachtelte Elemente beinhalten können, nochmals die selbe Parse-Methode aufgerufen wird, mit der die Liste selber geparst wurde.
+
+In Programm \ref{prog:Parser} ist die Wurzel-Parse-Funktion ersichtlich. \emph{parseElement} sorgt dafür, dass an der aktuellen Stelle des Parse-Prozesses die korrekte spezifische Parse-Funktion aufgerufen wird. \verb|'e'| liefert keinen Wert, da dies das Zeichen ist, welches das Ende eines Elements signalisiert. \verb|parseList| und \verb|parseDictionary| rufen in ihren jeweiligen Funktionsrümpfen wieder die \verb|parseElement|-Funktion auf und sorgen somit für die Rekursion. 
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+private fun parseElement(): ParsedData? {
+    return when (getCurr()) { //Zeichen an aktuelle Stelle im Parse-Prozess
+        'i' -> parseInt()
+        'l' -> parseList()
+        'd' -> parseDictionary()
+        'e' -> null
+        else -> parseString()
+    }
+}
+    \end{GenericCode}
+    \caption{Parse-Funktion des Bencode-Parsers.}
+    \label{prog:Parser}
+    \end{program}
+
+\section{Tracker-Kommunikation}
+
+Die \emph{TrackerService}-Klasse sorgt für die Verbindung zwischen dem \emph{TorrentLoader} und der \emph{TrackerAPI}. Sie erhält vom \emph{TorrentLoader} die nötigen Informationen, um eine Anfrage an den Tracker zu senden. Die von der \emph{TrackerAPI} erhaltene Antwort wird unter Verwendung des \emph{BencodeParser} und \emph{ParsedDataExtractor} aufbereitet und wieder an den \emph{TorrentLoader} zurückgeliefert. 
+
+Beim Senden einer Anfrage an den Tracker, muss auf die korrekte Encodierung der Query-Parameter geachtet werden. Dies betrifft den Info-Hash und die Peer-Id. Üblicherweise wird der Info-Hash auf den Websiten der Tracker im Hex-Format angegeben. Für die Anfrage an den Tracker wird jedoch das ISO 8859-1-Format benötigt. Zusätzlich muss der Info-Hash mittels URL-Encodierung encodiert werden.
+
+\section{Datenaustausch}
+
+Im folgenden Abschnitt wird die Implementierung des Datenaustausches mit einem Peer in verschiedenen Aspekten dargestellt. Dabei wird darauf eingegangen, wie der Verbindungsaufbau abläuft und darauffolgend Nachrichten ausgetauscht werden.
+
+\subsection{Verbindungsaufbau}
+
+Unter Verwendung der Sockets aus der Ktor-Bibliothek baut die \emph{PeerHandler}-Klasse eine Verbindung mit dem ihr zugewiesenen Peer auf. Hier wird darauf geachtet, dass der Verbindungsaufbau asynchron funktioniert und somit die anderen Verbindungen nicht blockiert werden. Ist die Verbindung aufgebaut, wird weiters der Empfang und Versand von Nachrichten in eigene Coroutines der Kotilnx.Coroutines-Bibliothek ausgelagert. Dadurch blockiert das Warten auf eine neue Nachricht nicht den Versand und umgekehrt. 
+
+\subsection{Nachrichtenerhalt}
+
+Werden über die Verbindung Daten erhalten, muss zuerst festgestellt werden, um welche Nachricht es sich handelt. Die ersten vier Bytes, die empfangen werden, repräsentieren die Länge der Nachricht. Das folgende fünfte Byte gibt die Nachrichten-ID an. Anhand dieser entscheidet der Client, wie die folgenden Bytes interpretiert werden müssen. Die weitere Bearbeitung findet für jeden Nachrichtentyp in einer eigenen Funktion statt. Nachdem die Nachricht behandelt wurde, wird wieder auf die nächste Nachricht in gleicher Weise gewartet. 
+
+\subsection{Nachrichtenerstellung}
+
+Bevor eine Nachricht versendet werden kann, wird sie zuerst von der \emph{MessageCreator}-Klasse erstellt. Diese Klasse enthält Funktionen, mit denen Nachrichten für alle im BitTorrent-Protokoll enthaltenen Nachrichtentypen erstellt werden können. Ausgenommen hiervon sind Nachrichten bezüglich Suspendierung und Interesse eines Peers. Diese Nachrichten haben immer den gleichen Aufbau und können somit fest codiert werden.
+
+Die Nachrichten werden direkt als Byte-Arrays zurückgeliefert, wie in Programm \ref{prog:MessageCreate} ersichtlich ist. Dadurch muss sich der \emph{PeerHandler} nur noch um das Versenden kümmern. Wie im Programm ersichtlich ist, wird zuerst festgelegt, wie lange die Nachricht ist und welche ID sie besitzt. Auch bei den anderen Nachrichten im \emph{MessageCreator} ist dieser Schritt gleich. Danach folgt der nachrichtenspezifische Inhalt. Im Falle der \emph{have}-Nachricht des dargestellten Programms, bedeutet dies, den Index des Piece zu übermitteln. Für Nachrichten mit variabler Länge (z.\,B. \emph{piece}) müssen die ersten vier Byte, welche die Länge der Nachricht repräsentieren, dementsprechend angepasst werden. 
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+fun getHavePieceMessage(pieceIndex: Int): ByteArray {
+    val length = 5.toByteArray() //Länge der Nachricht als ByteArray(Länge=4)
+    val id = byteArrayOf(4)      //Id der Nachricht (4) als ByteArray(Länge=1)
+    return length+ id + pieceIndex.toByteArray() //Kombination der Arrays
+}
+    \end{GenericCode}
+    \caption{Erstellung der \emph{piece}-Nachricht im \emph{MessageCreator}.}
+    \label{prog:MessageCreate}
+    \end{program}
+
+
+\subsection{Nachrichtenversand}
+
+Nachrichten werden über die beim Verbindungsaufbau erstellte Coroutine an den Peer gesendet. Die im \emph{MessageCreator} erstellten Byte-Arrays müssen somit nur noch an den Socket übergeben werden.
+Speziell für die \emph{request}-Nachricht wurden Optimierungen implementiert. Diese sollen dabei helfen, höhere Downloadgeschwindigkeiten zu erreichen. Dazu versendet der Client mehrere \emph{request}-Nachrichten für verschiedene Blöcke des Piece gleichzeitig. Dadurch muss der Client nicht für jeden Block auf die dazugehörige \emph{piece}-Nachricht warten. Der Client versucht eine gewisse Menge (in diesem Fall 10) an ausstehenden Anfragen beim Peer aufrecht zu halten. Wird eine \emph{piece}-Nachricht erhalten, versendet der Client die nächste \emph{request}-Nachricht.
+
+\section{Dateizugriff}
+
+Für das Speichern eines Piece und das Auslesen eines bereits vorhandenen Piece, muss regelmäßig mit der Zieldatei interagiert werden. Für kleine Dateien wäre es möglich, die gesamte Datei ins Programm zu laden, jedoch ist dies für größere Dateien nicht möglich. Daher liest/schreibt der Client nur an die Stellen in der Datei, welche vom jeweiligen Piece abhängen. Java bietet für diesen Anwendungsfall die Klasse \verb|RandomAccessFile| an. In Programm \ref{prog:FileRead} ist zu sehen, wie unter Verwendung dieser Klasse ein Block ausgelesen wird. Dabei ist der Ablauf für das Lesen und Schreiben gleich. Als erstes wird an die Position navigiert, wo mit der Datei interagiert werden soll. Danach wird eine beliebige Anzahl an Byte von dieser Position weg gelesen/geschrieben.
+
+
+
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+fun readBytes(pieceIndex: Int, offset: Int, length: Int): ByteArray {
+    val piecePosition = pieceIndex*metainfo.torrentInfo.pieceLength+offset
+    file.seek(piecePosition)      //Gehe zu Position des Piece in Datei
+    val block = ByteArray(length) //ByteArray anlegen 
+    file.read(block, 0, length)   //Dateiinhalt in ByteArray speichern
+    return block
+}
+\end{GenericCode}
+\caption{Auslesen eines Blocks aus der Datei.}
+\label{prog:FileRead}
+\end{program}

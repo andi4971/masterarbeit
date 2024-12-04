@@ -1,0 +1,154 @@
+\chapter{Lösungsdesign}
+\label{cha:Lösungsdesign}
+Im folgenden Kapitel wird das Lösungsdesign für die Implementierung des Bit\-Torrent-Clients beschrieben. Dazu wird konkretisiert, in welchem Umfang der Bit\-Torrent-Client implementiert wird und welche Technologien dafür ausgewählt wurden. Weiters wird die Architektur des BitTorrent-Clients dargestellt.
+
+\section{Konkretisierung Implementierungsanforderung}
+
+ BitTorrent wurde seit Beginn der Entwicklung mehrmals erweitert. In diesem Abschnitt wird festgehalten, welche Erweiterungen implementiert werden und welche nicht. Beispielsweise wurde die Möglichkeit hinzugefügt, die Metadaten für einen Torrent via Magnet-Links zu beziehen \parencite{bitTorrentMagnet}. Dies bedeutet, dass der Download der .torrent-Datei von einem Server nicht benötigt wird. Zusätzlich gibt es für das BitTorrent-Peer-Protokoll, das für den Datenaustausch zuständig ist, auch mehrere Erweiterungen. Eine dieser Erweiterungen ist das \emph{BitTorrent Extension Protocol} \parencite{bitTorrentExtensionProtocol}. Diese Erweiterung ermöglicht es, neue Erweiterungen für das BitTorrent-Peer-Protokoll zu verwenden, ohne mit dem Standard-Protokoll in Konflikt zu geraten. 
+
+Ziel dieser Implementierung ist es nicht, einen vollständigen BitTorrent-Client, welcher die neuesten Erweiterungen unterstützt, zu entwickeln. Stattdessen soll der Bit-Torrent-Client eine minimale Implementierung darstellen, welche alle Elemente beinhaltet, um grundsätzlich am Datenaustausch teilzunehmen. Die einzige Erweiterung, welche implementiert wird, ist die \emph{Multitracker Metadata Extension} für .torrent-Dateien \parencite{bitTorrentMultitrackerExtension}. Diese Erweiterung wird implementiert, da eine Vielzahl an Torrents diese Erweiterung unterstützen und die Implementierung nahezu keinen Extraaufwand darstellt. 
+
+Die Implementierung unterstützt nur den Download einzelner Dateien. BitTorrent erlaubt zwar auch Torrents von Ordnern, jedoch ist dies irrelevant für das eigentliche Protokoll. Daher werden nur Torrents für einzelne Dateien unterstützt.
+
+\section{Konkretisierungen bezüglich BitTorrent}
+
+Bevor näher auf das Lösungsdesign eingegangen wird, folgen genauere Beschreibungen einiger Komponenten von BitTorrent, die noch nicht im Kapitel \ref{sec:BitTorrentAufbau} behandelt wurden. Als Basis dient die Spezifikation von BitTorrent \parencite{BitTorrentSpecification}. 
+
+\subsection{Bencode}
+
+BitTorrent verwendet das Datenformat \emph{Bencode}. Die in der .torrent-Datei gespeicherten Daten werden im Bencode-Format abgelegt. Der Name setzt sich aus den Worten \emph{Binary} und \emph{Encode} zusammen. Konzeptionell ist Bencode ähnlich zu Datenformaten wie JSON. Abhängig von den Daten, welche in Bencode formatiert wurden, ist das Ergebnis ohne entsprechenden Parser nur teilweise für den Menschen lesbar. Bencode besteht aus folgenden Elementen:
+
+\begin{itemize}
+    \item \textbf{Zahlen}
+    \item \textbf{Zeichenketten}
+    \item \textbf{Listen}
+    \item \textbf{Assoziative Listen}
+\end{itemize}
+
+\subsubsection{Zahlen}
+Zahlen werden im Format \verb|i<Zahl in ASCII zur Basis 10>e| codiert. Die Zahl 50 wird somit als \verb|i50e| codiert. Eine führende Null ist nicht erlaubt.
+
+\subsubsection{Zeichenketten}
+Zeichenketten werden als \verb|<Zeichenlänge in Bytes zur Basis 10>:<Zeichenkette>| codiert. "Hallo" wird somit als \verb|5:Hallo|  codiert. Üblicherweise werden Zeichenketten in UTF-8 codiert. Zeichenketten können auch Binärdaten enthalten. Damit kann eine Folge von Bytes codiert werden. Dies ist der Fall für die Hashes der einzelnen Pieces eines Torrents. 
+
+\subsubsection{Listen}
+
+In einer Liste kann eine Menge von Werten gespeichert werden. Codiert wird eine Liste als \verb|l<Inhalt>e|. Der Inhalt der Liste ist wiederum in Bencode formatiert. Die Liste an Werten \verb|[50, "Hallo"]| sieht als Bencode-Liste wie folgt aus: \verb|li50e5:Halloe|. Da für jedes Element klar, ist wo es endet, gibt es kein eigenes Trennzeichen zwischen den Elementen.
+
+\subsubsection{Assoziative Listen}
+
+Assoziative Listen ermöglichen das Speichern von mehreren Werten im Schlüssel-Wert-Paar-Format. Die Codierung sieht wie folgt aus: \verb|d<Schlüssel-Wert-Paare>e|. Die \\ Paare \verb|{"Alter": 30, "Name": "Hans"}| haben folgende Bencode Repräsentation: \\ \verb|d5:Alteri30e4:Name4:Hanse|. Für die Schlüssel-Wert-Paare gilt, dass der Schlüssel immer eine Zeichenkette sein muss. Der Wert wiederum kann ein beliebiges, in Bencode enthaltenes Element sein.
+
+\subsection{Tracker}
+
+Die Funktionalität eines Trackers wurde im Kapitel \ref{sec:BitTorrentAufbau} bereits grundsätzlich erklärt. Folgend wird erläutert, wie die Kommunikation mit einem Tracker abläuft. 
+
+Ein BitTorrent-Client muss bei der Anfrage an einen Tracker mindestens folgende Query-Parameter übermitteln:
+\begin{itemize}
+    \item \textbf{info\_hash:} Der Hash-Wert, welcher den Torrent eindeutig identifiziert.
+    \item \textbf{peer\_id:} Eine Zeichenkette mit Länge 20, welche zur Identifikation des Peers benutzt wird. 
+    \item \textbf{port:} Die Port-Nummer, auf welcher der Peer nach neuen Verbindungen hört. 
+    \item \textbf{uploaded:} Die Anzahl an Bytes, welche hochgeladen wurden, seit dem ersten Kontakt mit dem Tracker.
+    \item \textbf{downloaded:} Die Anzahl an Bytes, welche heruntergeladen wurden, seit dem ersten Kontakt mit dem Tracker.
+    \item \textbf{left:} Die Anzahl an Bytes, welche der Peer noch herunterladen muss.
+\end{itemize}
+Die Spezifikation enthält noch weitere optionale Parameter. Diese werden jedoch nicht näher behandelt, da sie für die grundsätzliche Kommunikation mit dem Tracker nicht benötigt werden.
+Die Antwort des Trackers beinhaltet zumindest folgende, in Bencode codierten Daten:
+\begin{itemize}
+    \item \textbf{failure\_reason:} Eine Zeichenkette, welche einen aufgetretenen Fehler beschreibt. Ist kein Fehler aufgetretenen, ist dieses Element nicht vorhanden.
+    \item \textbf{interval:} Zeit in Sekunden, wie lange der Client warten soll, bis er die nächste Anfrage an den Tracker sendet.
+    \item \textbf{peers:} Enthält eine Liste an Peers, welche Teil des Swarms sind. Diese Liste kann in zwei Formen übermittelt werden. Ersteres:  Als Menge von assoziativen Listen, welche jeweils aufgeschlüsselt die IP-Adresse den Port und andere Informationen enthält. Zweiteres: als Zeichenkette. Die Länge dieser ist ein Vielfaches von 6 Bytes. Die ersten 4 Bytes repräsentieren die IPv4-Adresse\footnote[1]{Dieses Format unterstützt nur IPv4-Adressen. IPv6-Adressen können nur als assoziative Listen repräsentiert werden.} und die restlichen den Port.
+\end{itemize}
+
+\section{Technologieauswahl}
+
+Für die Implementierung des BitTorrent-Clients werden verschiedene Technologien und Bibliotheken benötigt. Bei der Auswahl der Bibliotheken wurde beachtet, dass die Kernfunktionalität des Clients selber implementiert wird. Für Funktionalitäten wie einen HTTP-Client werden jedoch Bibliotheken verwendet.
+Folgend werden die ausgewählten Technologien und Bibliotheken kurz beschrieben und Gründe für deren Einsatz präsentiert.
+
+\subsection{Programmiersprache}
+
+Zur Entwicklung des BitTorrent-Clients wird die Programmiersprache Kotlin verwendet. Die Sprache bietet einige Vorteile, welche effizientes Programmieren ermöglichen. Kotlin besitzt eine große Standardbibliothek, welche viele Standardaufgaben wie die Erstellung von Dateien erleichtert. Der kompilierte Kotlin-Code ist ausführbar auf der Java-Virtual-Machine. Dadurch ist es möglich, jegliche Java-Bibliothek in Kotlin einzubinden. 
+
+\subsection{HTTP-Client}
+
+Die Java-HTTP-Client Bibliothek Feign\footnote[1]{https://github.com/OpenFeign/feign} wird für die Kommunikation mit dem Tracker verwendet. Die Bibliothek wurde original von Netflix entwickelt, wird jedoch nun von der OpenSource-Community weiter entwickelt. Feign bietet gegenüber der in der Java-Standardbibliothek enthaltenen Implementierung eine einfachere Möglichkeit, HTTP-Schnittstellen zu beschreiben. Mittels Feign  können HTTP-Schnittstellen unter Verwendung von Annotationen beschrieben werden. Dadurch sind die erstellten Schnittstellen leichter lesbar. Weiters lässt sich der Anwendungscode zudem klar von der Schnittstellendefinition trennen. 
+
+\subsection{Parallelisierungs-Bibliothek}
+
+Da BitTorrent die Kommunikation mit mehreren anderen Peers gleichzeitig unterstützt, ist es nötig Parallelisierung in den Client zu integrieren. Dafür wird die Kotlin-Bibliothek Kotlinx.Coroutines\footnote[2]{https://github.com/Kotlin/kotlinx.coroutines} verwendet. Die Bibliothek wird vom Kotlin-Hersteller Jetbrains entwickelt. Kotlinx.Coroutines baut auf verschiedenen Spracheigenschaften von Kotlin auf und ermöglicht daher eine einfache Verwendung. Die von der Bibliothek erstellten Coroutines sind vergleichbar mit Tasks der C\# Task Parallel Library\footnote[3]{https://learn.microsoft.com/de-de/dotnet/standard/parallel-programming/task-parallel-library-tpl}. 
+ 
+\subsection{Socket-Bibliothek}
+
+Die Kotlin-Bibliothek Ktor\footnote[4]{https://github.com/ktorio/ktor} wird für die Verwaltung der Sockets verwendet. Entwickelt wird Ktor von Jetbrains. Ktor verwendet Kotlinx.Coroutines, wodurch eine gute Integration mit anderen Teilen des Programmes gewährleistet werden kann.  
+
+\section{Architektur}
+
+Im folgenden Abschnitt wird die Architektur des BitTorrent-Clients erläutert. Der grundsätzliche Ablauf des Clients ist in der Abbildung \ref{fig:AblaufClient} beschrieben. Der Client kann somit in vier Komponenten unterteilt werden. Die größte und komplexeste Komponente stellt hierbei der Datenaustausch dar.
+
+\begin{figure}[]
+    \centering
+    \includesvg[width=\textwidth]{ArchitekturAblauf} %{CS0031}
+    \caption{Ablauf des BitTorrent-Clients.}
+    \label{fig:AblaufClient}
+\end{figure}
+
+\subsection{Einlesen .torrent-Datei}
+
+Den ersten Schritt stellt die Verarbeitung der .torrent-Datei dar. Die darin enthaltenen Metadaten müssen geparst werden. Da die Daten der .torrent-Datei im Bencode-Format hinterlegt sind, muss ein Parser dafür implementiert werden. Dieser Parser wird zusätzlich für das Parsen der Antwort des Tracker benötigt. Daher wird der Parser so implementiert, dass jegliche in Bencode formatierten Daten gelesen werden können. Die Metadaten in der .torrent-Datei sind in einer assoziativen Liste gespeichert. Diese gilt es zu extrahieren und aufzubereiten, damit die Daten in den nächsten Schritten verwendet werden können. Folgende Metadaten müssen extrahiert werden:
+\begin{itemize}
+    \item \textbf{Announce-URL} des Trackers. Schlüssel: \verb|announce|
+    \item \textbf{Info-Dictionary} ist wiederum eine assoziative Liste. Diese enthält die Metadaten, welche die Datei und deren Pieces beschreiben. Die der Liste zugrundeliegenden Bytes müssen für einen späteren Schritt zusätzlich gespeichert werden. Schlüssel: \verb|info|
+\end{itemize}
+
+Im Info-Dictionary sind unter anderem die Hashes der Pieces hinterlegt. Falls die Zieldatei bereits existiert, kann mit den Hashes validiert werden, wie viele Pieces bereits erfolgreich heruntergeladen wurden. 
+
+\subsection{Interaktion mit Tracker}
+
+Bevor die Peer-Liste vom Tracker empfangen werden kann, müssen zuerst die für die Anfrage benötigten Daten aus den Metadaten gelesen werden. Benötigt wird der Info-Hash. Dieser ist definiert als der SHA1-Hash der Bytes des Info-Dictionary in den Metadaten. Mit diesem kann die Anfrage an den Tracker gestellt werden. Die anderen Parameter, welche für die Anfrage benötigt werden, müssen bei der ersten Anfrage auf die Standardwerte gesetzt werden. Ausnahme ist der Parameter \verb|left|, welcher sich aus den validierten Teilen der Zieldatei errechnen lässt. Als Antwort auf die Anfrage, liefert der Tracker die Liste der Peers im Swarm. Diese wird dann im nächsten Schritt benutzt, um die Peer-to-Peer-Verbindung mit den Peers aufzubauen.
+
+Erneute Anfragen an den Tracker sind grundsätzlich nach Ablauf des vom Tracker festgelegten Intervalls möglich. Solange der Client jedoch genug Peers hat, mit denen er sich verbinden kann, ist dies nicht zwanghaft notwendig. Es würde jedoch dem Tracker erlauben, einen genaueren Überblick über den Swarm des Torrents zu erhalten. Für diese Implementierung werden keine erneuten Anfragen an den Tracker gesendet. 
+
+\subsection{Datenaustausch mit Peers}
+
+Im folgenden Schritt findet der Datenaustausch mit den Peers aus der Peer-Liste des Trackers statt. Der grundsätzliche Ablauf der Kommunikation mit einem Peer ist in Abbildung \ref{fig:BitTorrentPieceProcess} dargestellt. Speziell hervorgehoben in der Abbildung ist der Übertragungsprozess der Datei. Dieser ist der wichtigste Teil der Kommunikation mit dem Peer. 
+
+\begin{figure}[]
+    \centering
+    \includesvg[width=\textwidth]{bittorrentPieceProcess} %{CS0031}
+    \caption{Datenaustausch mit einem Peer.}
+    \label{fig:BitTorrentPieceProcess}
+\end{figure}
+
+An sich könnte mit allen erhaltenen Peers gleichzeitig eine Verbindung aufgebaut werden. Dies ist jedoch nicht unbedingt nötig. Je nach verfügbarer Upload-Bandbreite der Peers, können mit wenigen Peers bereits Geschwindigkeiten im Bereich von mehreren MB/s erreicht werden. 
+
+Wird mit mehreren Peers gleichzeitig kommuniziert, so ist besonders Wert auf die Synchronisation zu legen. Es soll vermieden werden, dass die selben Daten von mehreren Peers gleichzeitig angefragt werden. Weiters müssen alle Peers informiert werden, wenn beispielsweise der Client ein neues Piece erhalten hat und dieses nun anderen zur Verfügung stellen kann.
+
+\subsubsection{Verbindungsaufbau \& Handshake}
+
+Um Kommunikation mit einem Peer aufnehmen zu können, muss als erstes eine TCP-Verbindung mit diesem aufgebaut werden. Das BitTorrent-Protokoll schreibt daraufhin vor, dass als erstes ein Handshake zwischen den Peers ausgetauscht werden muss. Im Handshake enthalten ist neben der Peer-ID und den unterstützten Erweiterungen auch der Info-Hash. Anhand des Info-Hashes kann der Peer, mit dem die Verbindung aufgebaut wird, feststellen, bezüglich welchem Torrent man Daten austauschen möchte.
+
+Die \emph{Bitfield}-Nachricht des Protokolls gehört technisch gesehen nicht zum Handshake, darf jedoch nur direkt nach diesem versendet/erhalten werden. Mittels dieser Nachricht gibt ein Peer bekannt, welche Pieces des Torrents er bereits besitzt. Dadurch kann ermittelt werden, von welchen Peers welche Pieces angefordert werden können.
+
+\subsubsection{Datenaustausch}
+
+Jede Verbindung mit einem Peer kann als abgekapselte Einheit betrachtet werden. Jede Einheit speichert sich eigens den Zustand des Peers mit dem sie verbunden ist und kommuniziert mit ihm. Folgende Daten müssen über den Zustand der Verbindung gespeichert werden:
+\begin{itemize}
+    \item \textbf{Peer/Client ist interessert}
+    \item \textbf{Peer/Client ist suspendiert}
+    \item \textbf{Verfügbare Pieces des Peers}
+\end{itemize}
+Von einer zentralen Stelle können sich die Einheiten Pieces holen, welche sie dann down\-loaden. Hat eine Einheit ein Piece vollständig erhalten, meldet sie dies der zentralen Stelle. Diese kümmert sich dann um die weitere Verarbeitung des Piece, sprich: das Speichern in die Datei. 
+Jede Einheit holt sich so lange neue Pieces, bis alle heruntergeladen wurden oder von dem jeweiligen Peer keine neuen Pieces mehr bezogen werden können. 
+
+Der Kommunikation mit dem Peer innerhalb einer Einheit läuft wie folgt ab: 
+Zu Beginn startet eine Verbindung im Zustand "nicht interessiert" und "suspendiert". Ist einer der Peers an den Daten des anderen interessiert, so sendet dieser die \emph{interested}-Nachricht. Zusätzlich wird die \emph{unchoke}-Nachricht versendet, um zu signalisieren, dass man über die Verbindung nun Daten übertragen möchte. Sendet der andere Peer ebenfalls eine \emph{unchoke}-Nachricht, können nun Pieces übertragen werden. Das BitTorrent-Peer-Protokoll schreibt keine Reihenfolge vor, in der Nachrichten versendet werden müssen. Das heißt, es kann jederzeit eine beliebige Nachricht versendet und empfangen werden. Der Client wird daher so strukturiert, dass das Empfangen von Nachrichten unabhängig von den versendeten Nachrichten abläuft. 
+
+Kann vom Peer ein Piece bezogen werden, so beginnt der Client mit dem Versenden der dafür nötigen \emph{request}-Nachricht. Der Peer antwortet darauf mit der \emph{piece}-Nachricht. Diese enthält einen Block des Piece. Dieser Block beinhaltet die Daten der Zieldatei. Dieser Ablauf, welcher in Abbildung \ref{fig:BitTorrentPieceProcess} dargestellt wird, wiederholt sich, bis alle Blöcke des Piece erhalten wurden. Erhält man wiederum von einem Peer eine \emph{request}-Nachricht, muss  eine entsprechende \emph{piece}-Nachricht zurückgesendet werden. Das komplette Piece wird validiert und danach an die zentrale Stelle übergeben. Wenn noch weitere Pieces von diesem Peer erhalten werden können, wird von der zentralen Stelle wiederum ein Piece zugewiesen und der Prozess wiederholt. Ist dies nicht mehr der Fall, so wird die Verbindung suspendiert und dem Peer signalisiert, dass man nicht mehr interessiert ist.
+
+
+Wurde ein Piece heruntergeladen, werden an alle verbundenen Peers \emph{have}-Nach\-richten ausgesendet. Hier kann mit den verfügbaren Pieces jedes Peers abgeglichen werden, ob das Senden der Nachricht sinnvoll ist. Hat ein Peer das Piece bereits, wird er es auch vom Client nicht anfordern. Daher muss die Nachricht nur versendet werden, wenn der Peer das Piece noch nicht besitzt. Erhält man von einem Peer eine \emph{have}-Nachricht, wird gespeichert, welches neue Piece von diesem Peer nun verfügbar ist. Dies ist vor allem relevant, wenn der Client einen Torrent bezieht, für den es (noch) nicht viele Seeder gibt und sich die Leecher untereinander austauschen.
+
+\subsection{Schreiben eines Piece in Datei}
+
+Wird ein Piece vollständig heruntergeladen, musss es noch in die Zieldatei gespeichert werden. Pieces werden nicht in der Reihenfolge heruntergeladen, in der sie in der Datei positioniert sind. Daher können sie nicht der Reihe nach in die Datei geschrieben werden. Dies ist der Fall, da bei mehreren gleichzeitigen Verbindungen nicht garantiert werden kann, dass jedes Piece in der richtigen Reihenfolge heruntergeladen wird. Zusätzlich können auch einzelne Pieces (noch) nicht verfügbar sein. 
+Anhand des Index, welcher jedes Piece eindeutig identifiziert, wird berechnet, an welcher Stelle in der Datei das Piece eingefügt werden muss. Für die Berechnung des Byte-Index, an dem in die Datei geschrieben wird, wird die Länge eines Piece benötigt. Diese kann aus den Metadaten gelesen werden. Der Byte-Index berechnet sich dann als \verb|Byte Index = Piece Länge * Piece Index|.

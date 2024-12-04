@@ -1,0 +1,77 @@
+\chapter{Kommerzielle Anwendungsgebiete Peer-to-Peer}
+\label{cha:Kommerziell}
+In diesem Kapitel wird vorgestellt, wie verschiedene Unternehmen und Organisationen Peer-to-Peer Netzwerke kommerziell einsetzen. 
+
+\section{Airdrop}
+Airdrop ist ein von Apple entwickeltes Feature für iOS und macOS, welches es ermöglicht, Dateien zwischen Geräten, auf Basis von Peer-to-Peer,  auszutauschen. Nutzer können untereinander Daten austauschen, wenn sie in der Nähe voneinander sind. Airdrop nutzt eine Kombination aus Bluetooth und Wi-Fi für die Verbindung. 
+
+Die Funktionsweise von Airdrop wird auf der Website von Apple beschrieben \parencite{appleAirdrop}. Möchte ein Nutzer Daten an ein anderes Apple-Gerät senden, müssen zuerst Bluetooth und Wi-Fi aktiviert werden. Das Gerät sendet daraufhin mittels Bluetooth-Low-Energy eine Nachricht aus. Diese Nachricht enthält Identifikationsdaten des Senders. Sind Apple-Geräte in der Reichweite des Bluetooth-Signals aktiv und haben Airdrop aktiviert, so erhalten die Geräte die Nachricht über den versuchten Verbindungsaufbau. Akzeptieren ein oder mehrere Geräte die Anfrage, wird eine Peer-to-Peer-Verbindung mittels Wi-Fi aufgebaut. Die Grundlage für die Kommunikation mittels Wi-Fi, bildet das Apple Wireless Direct Link Protocol \parencite{stute2018one}. Die Daten werden dann über die geöffnete Wi-Fi-Verbindung übertragen. Die Geräte benötigen für die Verwendung von Airdrop keine Internet-Verbindung. Die gesamte Kommunikation erfolgt lokal über die Peer-to-Peer-Wi-Fi-Verbindung. 
+Airdrop ist eine proprietäre Technologie von Apple, jedoch gibt es auch Airdrop-kompatible Open-Source-Implementierungen, wie das von \textcite{openDrop} entwickelte OpenDrop. 
+
+\section{BitTorrent}
+
+Mehrere Unternehmen und Organisationen verwenden die BitTorrent-Technologie. Mittels der BitTorrent-Technologie stellen diese Unternehmen Daten für die Öffentlichkeit bereit, oder übermitteln diese an ihre Kunden. Folgend werden einige dieser Unternehmen und Organisationen vorgestellt. Zusätzlich wird angeführt, welche Vorteile die Unternehmen und Organisationen sich durch die Verwendung der BitTorrent-Technologie erhoffen.
+
+\subsection{Wargaming}
+
+Wargaming ist ein Videospielehersteller, der unter anderem mehrere Massen-Mehr\-spieler-Onl\-ine-Spiele entwickelt und betreibt. Diese sind World of Tanks, World of Warships und World of Warplanes. Laut \textcite{wotPlayerStatistics} haben sich mehr als 160 Millionen Spieler alleine für World Of Tanks registriert. 
+
+Alle drei Spiele können über das von Wargaming entwickelte Wargaming.net Game Center heruntergeladen werden. Für die Installation von World of Tanks würden bis zu 100 Gigabyte an Speicherplatz benötigt werden. Anzumerken ist hierbei, dass die für die Installation benötigten Daten in komprimierter Form übertragen werden. Dadurch ist die Menge an Daten, die übertragen werden, etwas geringer als die vollen 100 Gigabyte. Die Größe der für das Spiel benötigten Dateien, kombiniert mit der Anzahl an Spielern, sorgt für einen erheblichen Datenverkehr. Für die Übertragung dieser Daten, verwendet das Wargaming Game Center ausschließlich BitTorrent \parencite{wargamingNetworkInteraction}. Als Vorteil führt Wargaming an, dass durch die Verwendung von BitTorrent Daten nicht nur von einem Rechenzentrum heruntergeladen werden können, sondern zusätzlich noch von Computern in der Nähe oder im lokalen Netzwerk \parencite{wargamingNetworkInteraction}. Bevor Wargaming  das Game Center verwendete, konnten die Spiele auch mittels eines beliebigen BitTorrent-Client aktualisiert werden \parencite{wotFaq}. 
+
+Im Wargaming Game Center kann eine Maximale-Upload-Geschwindigkeit gesetzt werden oder der Upload als Ganzes unterbunden werden. Diese Einstellungen sind für Spieler mit limitierter Upload-Bandbreite relevant. Würde die gesamte Upload-Bandbreite benutzt werden, um Daten mit anderen Spielern zu teilen, wäre wenig oder keine Upload-Bandbreite mehr verfügbar, um mit dem Spielserver zu kommunizieren. Dies könnte zu hohen Latenzzeiten führen und daraus folgend die Spielqualität erheblich beinträchtigen.
+
+
+\subsection{OpenStreetMap}
+
+Mittels des OpenStreetMap Projektes kann frei auf weltweite Karten zugegriffen werden. Das Projekt sammelt Geo-Daten und macht diese frei zum Download verfügbar. Unterstützt wird OpenStreetMap durch die OpenStreetMap-Foundation. Auf ihrer Website können die Daten in Form von Karten angesehen werden. Zusätzlich können noch Routen von A nach B berechnet werden. Die von OpenStreetMap bereitgestellten Daten werden unter anderem von \textcite{osmApple} und Facebook verwendet \parencite{osmFacebook}. 
+
+Die von OpenStreetMap gesammelten Geo-Daten haben eine Größe von aktuell 121 Gigabyte \parencite{osmPlanet}. OpenStreetMap veröffentlicht wöchentlich eine neue Version ihrer Daten. Diese können, in Form einer XML-Datei, heruntergeladen werden. Durchschnittlich werden täglich vier Millionen Änderungen an den Geo-Daten durchgeführt \parencite{osmStats}. Neben der Gesamtversion der Daten stehen auch die wöchentlichen Änderungen separat zum Download zur Verfügung. Diese umfassen circa fünf Gigabyte an Daten. 
+
+Die OpenStreetMap-Foundation verwaltet die für den Download und Betrieb notwendigen Server. Server-Kapazitäten werden unter anderem vom University College London bereitgestellt \parencite{osmHardware}. Aus dem Finanz-Be\-richt der OpenStreet\-Map-Foundation geht hervor, dass der Großteil der verfügbaren Gelder für Hardware ausgegeben wird \parencite{osmFinances}. Finanziert wird die Open\-Street\-Map-Foun\-dation hauptsächlich von Spenden und Mitgliedsbeiträgen, wie im Finanz-Be\-richt erwähnt wird. Daher erhöhen sich mit steigenden Nutzerzahlen nicht zwanghaft die für den Betrieb der Server notwendigen Einnahmen. Bemerkbar macht sich dies auf der Download-Seite für die Geo-Daten. Aufgrund von limitierter Upload-Bandbreite, müssen Downloads auf maximal 4096 Kilobyte pro Sekunde gekappt werden \parencite{osmPlanetWarning}. 
+
+Als Alternative zu den Direkt-Downloads wird auf Torrent-Versionen der selben Dateien verwiesen. \textcite{osmPlanetTorrent} begann 2020 mit der Verwendung von Torrents als zusätzliche Downloadmöglichkeit. Für jede neue Version der Geo-Daten wird seither ein Torrent angeboten. OpenStreetMap nennt mehrere Gründe für die Einführung von Torrents. Ist der Download-Server, wie in der vorher erwähnten Situation, überlastet, können Torrents dazu beitragen, die Server zu entlasten. Downloaden in weiterer Folge mehrere Nutzer die Geo-Daten mittels Torrents, kann ihnen dies im Vergleich zu Direkt-Downloads höhere Download-Geschwindigkeiten ermöglichen (siehe Kapitel \ref{sec:VergDownload}). 
+
+
+\subsection{Linux-Distributionen}
+ 
+Mehrere bekannte Linux-Distributionen bieten den Download ihrer Installationsdateien auch mittels Torrents an. Dazu zählen, unter anderem, \textcite{debianTorrent}, \textcite{ubuntuTorrent} und \textcite{centOSTorrent}. \textcite{debianTorrent} beschreibt auf ihrer Website, dass Downloads unter Verwendung von BitTorrent ihre Server nur minimal belasten. Durch die Verteilung der Last und das Hochladen von Daten von allen Peers können zusätzlich schnelle Downloadgeschwindigkeiten ermöglicht werden. 
+
+
+\section{Windows}
+
+Microsoft ermöglicht für sein Betriebssystem Windows und darauf aufbauender Software, Aktualisierungen auf Basis von Peer-to-Peer \parencite{microsoftP2P}. Microsoft stellt dafür zwei Methoden zur Verfügung: Delivery Optimization und BranchCache. Diese Methoden können in verschiedenen Bereichen angewendet werden. Diese sind:
+\begin{itemize}
+    \item \textbf{Windows Update} ermöglicht Aktualisierungen von Windows für einen Endkunden.
+    \item \textbf{Windows Update for Business} ermöglicht kommerziellen Kunden zu verwalten, wann und welche Windows-Updates installiert werden. Endgeräte verbinden sich hier mit Microsoft direkt. Windows Update for Business ist eine modernere Alternative zu WSUS \parencite{microsoftWUFB}.
+    \item \textbf{WSUS (Windows Server Update Services)} ermöglicht kommerziellen Kunden zu verwalten, wann und welche Windows-Updates installiert werden. WSUS wird auf einem Windows Server installiert und dient als lokale Speicherinstanz für Windows Updates innerhalb eines Netzwerkes. Geräte im Netzwerk verbinden sich mit WSUS, um Updates zu erhalten \parencite{microsoftWSUS}. 
+    \item \textbf{Configuration Manager} ist eine Management-Software für die Verwaltung von Hardware und Software in einem Unternehmen. Configuration Manager kann benutzt werden, um  Aktualisierungen von Applikations-Software oder Betriebssystemen zu automatisieren \parencite{microsoftConfigMgr}. 
+\end{itemize}
+BranchCache besitzt im Vergleich zu Delivery Optimization beschränkte Anwendungsgebiete. Diese sind in der Tabelle \ref{tab:windowsUpdateArea} ersichtlich. Folgend wird nun näher auf die beiden Methoden eingegangen. \noindent
+\begin{table}[]
+    \caption{Anwendungsgebiete der Windows Peer-to-Peer-Update-Methoden. Übernommen von \textcite{microsoftP2P}. }
+    \label{tab:windowsUpdateArea}    
+    \begin{tabularx}{\textwidth}{L|*{4}{L} @{}} 
+    \hline
+    \textbf{Methode}    & \textbf{Windows Update} & \textbf{Windows Update for Business} & \textbf{WSUS}  & \textbf{Configura\-tion Manager} \\  \hline
+    Delivery Optimization  & Ja                      & Ja                                   & Ja            & Ja                             \\
+    BranchCache         & Nein                    & Nein                                 & Ja            & Ja              \\  \hline        
+    \end{tabularx}
+\end{table}
+
+\subsection{Delivery Optimization}
+Grundlage für diesen Abschnitt ist die Dokumentation von \textcite{microsoftDeliveryOpt} zu Delivery Optimization. Delivery Optimization ist eine Technologie, mit der Daten für beispielsweise Aktualisierungen von mehreren alternativen Quellen zusätzlich zu klassischen Servern bezogen werden können. Alternative Quellen sind andere Geräte innerhalb des selben Netzwerkes. Verwaltet wird Delivery Optimization in der Cloud. Daher wird für die Verwendung eine Internetverbindung und im Speziellen eine Verbindung zum Delivery Optimization Cloud Service benötigt. 
+Mit Delivery Optimization können neben Windows Updates noch andere Arten von Inhalt übertragen werden. Unterstützt werden unter anderem noch Windows 10 (Business) Store Dateien, Windows Defender Updates und Microsoft Edge Browser Updates. 
+
+Das Beziehen von Daten unter der Nutzung von Delivery Optimization kann wie folgt beschrieben werden: Basis hierfür ist die Dokumentation von \textcite{microsoftDeliveryOptWorkflow}. Am Beginn eines Downloads holt sich der Client Metadaten vom Delivery Optimization Service in der Cloud. Die Metadaten beinhalten eine Menge an SHA-256 Hashes, welche die  herunterzuladenden Daten beschreiben. Jeder Hash ist eine Prüfsumme für einen Block der Daten. Ein Block ist im Regelfall ein Megabyte groß. Die Authentizität der Metadaten wird zusätzlich noch mit einem Hash überprüft. Als nächstes baut der Client eine Verbindung mit einem sogenannten Peer Matching Service von Microsoft auf. Dieser liefert dem Client eine Liste an Peers, welche die gewünschten Daten besitzen. Der Client baut darauf hin Verbindungen mit den Peers auf. Sobald ein Block von einem Peer heruntergeladen wurde, wird dessen Hash mit dem aus den Metadaten verglichen. Fällt diese Überprüfung negativ aus, so wird der Bock verworfen. Liefert ein Peer mehrmals ungültige Blöcke, so wird dieser vom Client blockiert. Sind alle Blöcke heruntergeladen, fügt Delivery Optimization die Blöcke in eine Datei zusammen. Abschließend verifiziert der Dienst, welcher Delivery Optimization benutzt (z.\,B. Windows Update), die gesamte Datei.   
+
+\subsection{BranchCache}
+
+Als Grundlage für diesen Abschnitt dient die Dokumentation von \textcite{microsoftBranchCache} für BranchCache. Ziel von BranchCache ist es, für auf mehrere Standorte verteilte Unternehmen die Nutzung der WAN-Schnittstellen zwischen den Standorten zu verringern. BranchCache ist als Caching-Lösung konzipiert. Es gibt zwei Möglichkeiten, diesen Cache zu verwenden. Im Hosted Cache Modus ist an jedem Standort ein Windows Server vorhanden, welcher die Caching Aufgaben übernimmt. Im Distributed Cache Modus werden die Daten auf den einzelnen Rechnern zwischengespeichert. Bei beiden Modi ist ein zentraler BranchCache Server am Hauptstandort notwendig. Microsoft hat für BranchCache die Protokolle HTTP, SMB und BITS erweitert. Zusätzlich wurden mehrere Protokolle für die verschiedenen Kommunikationsarten von BranchCache entwickelt. Folgend wird dargestellt, wie der Austausch von Daten unter Nutzung von BranchCache abläuft. 
+
+\subsubsection{Distributed Cache Modus}
+
+Wenn ein Client eine Datei benötigt, sendet er im Distributed Cache Modus eine Anfrage an den zentralen Branch\-Cache-Server. Der Client teilt dem Server  in der Anfrage mit, dass er BranchCache benutzen möchte. Der Server liefert daraufhin dem Client Metadaten, welche die gewünschte Datei beschreiben. Unter Nutzung des BranchCache-Discovery-Protokolls sucht der Client nach einer Kopie der Datei im lokalen Netzwerk. Ist keine Kopie vorhanden, wendet sich der Client erneut an den Server. Dieses Mal ohne Verwendung von BranchCache. Daher übermittelt der Server nun die gewünschte Datei. Diese Datei fügt der Client nach dem Download zu seinem lokalen Cache hinzu. Benötigt ein anderer Client  die selbe Datei, kann diese nun aus dem lokalen Netzwerk bezogen werden. Es folgt wieder der gleiche Ablauf wie beim ersten Client. Jedoch meldet sich nun der Client, welcher die Datei besitzt, auf die Anfrage zurück. Mittels des BranchCache Retrieval Protocol wird die Datei übermittelt. Abschließend überprüft der Client die Authentizität der erhaltenen Datei. Dazu werden die Metadaten, welche vom Server gesendet wurden, verwendet.
+
+\subsubsection{Hosted Cache Modus}
+
+Die Kommunikation im Hosted Cache Modus funktioniert zu Beginn gleich wie im Distributed Cache Modus. Der Client sendet wieder eine Anfrage an den zentralen BranchCache-Server und dieser antwortet mit den Metadaten. Im Gegensatz zum Distributed Cache Modus wendet sich der Client nun an den lokalen BranchCache-Server. Dieser teilt dem Client mit, ob die gewünschte Datei im Cache vorhanden ist. Ist dies nicht der Fall, bezieht der Client die Daten vom zentralen Server. Der Download funktioniert ident wie im Distributed Cache Modus. Nachdem der Download abgeschlossen wurde, teilt der Client dies dem lokalen BranchCache-Server unter Verwendung des BranchCache Hosted Cache Protocol mit. Der Server speichert daraufhin eine Kopie der Datei. Benötigt ein anderer Client nun die selbe Datei, antwortet der lokale BranchCache-Server, dass die Datei vorhanden ist. Daher wird die Datei nicht vom zentralen Server bezogen.

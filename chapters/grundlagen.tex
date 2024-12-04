@@ -1,0 +1,153 @@
+\chapter{Grundlagen}
+\label{cha:Grundlagen}
+Dieses Kapitel bietet einen Überblick über die Grundlagen von Peer-to-Peer-Netz\-werken. Es wird dargestellt, in welche Klassen sich Peer-to-Peer-Netz\-werke einteilen lassen und anhand von welchen Kriterien diese klassifiziert werden. Weiters wird jeweils ein Vertreter dieser Klassen vorgestellt.
+
+\section{Unterteilung von Peer-to-Peer-Netzwerken}
+\textcite{pourebrahimi2005survey} teilen Peer-to-Peer-Netz\-werke in zwei Gruppen ein: Hybrid und vollkommen dezentralisiert. Die Einordnung in die Gesamtheit der verschiedenen Computersysteme ist in Abbildung \ref{fig:ComputerSystems} ersichtlich.
+
+\begin{figure}[]
+    \centering
+    \includesvg[scale=0.9]{computer-systems} %{CS0031}
+    \caption{Einteilung von Computer Systemen. Nachempfunden von \textcite{pourebrahimi2005survey}. }
+    \label{fig:ComputerSystems}
+\end{figure}
+
+Hybride Netzwerke bestehen aus einem oder mehreren Servern, welche Metadaten verwalten. Mittels diesen wird gespeichert, welche Dateien sich aktuell im Netzwerk befinden und welche Nutzer diese besitzen. Sind in einem Netzwerk mehrere Server vorhanden, so spricht man von dezentraler Indexierung und sonst von zentraler Indexierung \parencite{pourebrahimi2005survey}.
+
+Hingegen besitzen völlig dezentrale Netzwerke keinen einzigen Server. Alle Peers sind in ihrer Funktionalität gleichwertig. Somit stellt der Ausfall von einem oder mehreren Peers keine Gefahr für die Funktionstüchtigkeit des Netzwerkes dar \parencite{pourebrahimi2005survey}. 
+
+Folgend werden drei Peer-to-Peer Protokolle/Netzwerke vorgestellt. 
+\begin{itemize}
+    \item \textbf{Gnutella:} Vollkommen dezentralisiert
+    \item \textbf{Napster:} Hybrid mit zentraler Indexierung
+    \item \textbf{BitTorrent:} Hybrid mit dezentraler Indexierung
+\end{itemize}
+
+\section{Gnutella}
+Als Basis für den folgenden Abschnitt dient die Spezifikation des Gnutella-Protokolls \parencite{GnutellaProtocol}.
+
+\subsection{Überblick}
+Gnutella wurde im Jahr 2000 von Justin Frankel entwickelt.
+Das Protokoll hat die Aufgabe, den Kontakt zwischen zwei Peers, welche Daten austauschen möchten, herzustellen. Einzelne Peers innerhalb des Gnutella-Netzwerkes werden \emph{Servents} genannt. 
+
+\subsection{Relevanz}
+Gnutella ist im Gegensatz zu anderen Protokollen, wie BitTorrent und Napster, ein völlig dezentral-organisiertes Netzwerk. Dadurch gibt es keinen einzelnen Punkt, welcher das Netzwerk zu Fall bringen könnte. Im Gnutella-Protokoll selbst ist zudem der eigentliche Datenaustausch zwischen den Servents nicht enthalten, sondern wird auf ein anderes Protokoll (siehe Kapitel \ref{sec:GnutellaAufbau}) ausgelagert.
+
+\subsection{Aufbau}
+\label{sec:GnutellaAufbau}
+Das Gnutella-Protokoll bildet ein gesammeltes Netzwerk, in dem alle Servents miteinander verbunden sind. Zur Kommunikation innerhalb des Netzwerkes gibt es fünf verschiedene Nachrichtenarten:
+\begin{itemize}
+    \item \textbf{Ping} wird benutzt, um neue Servents im Netzwerk zu finden. 
+    \item \textbf{Pong} sendet ein Servent als Antwort auf einen Ping. Die Antwort enthält die IP-Adresse des Servents und eine Angabe über die Menge an Daten, die er dem Netzwerk bereitstellt. 
+    \item \textbf{Query} enthält einen Suchtext, mit welchem das Netzwerk nach Dateien abgefragt werden kann. 
+    \item \textbf{Query-Hit} wird versendet, wenn ein Servent eine in einer Query angefragte Datei bei sich lokal vorhanden hat.
+    \item \textbf{Push} ermöglicht es einem Servent, welcher aufgrund von Firewall-Problemen nicht selbst die Verbindung aufbauen kann, von einem anderen Servent die Verbindungsanfrage zu erhalten.
+\end{itemize}
+Über das Netzwerk versendete Nachrichten, werden mittels Broadcast\footnote[1]{Jeder Servent leitet die erhaltene Nachricht an alle mit ihm verbundenen Servents weiter. Ausgenommen ist hiervon der Servent, von dem die Nachricht erhalten wurde.} propagiert.
+Damit einzelne Nachrichten nicht endlos lange propagiert werden, verwendet Gnutella zwei Kontrollfelder in jeder Nachricht. Das erste Feld speichert, wie viele Sprünge eine Nachricht bereits hinter sich hat. Das zweite, wie viele Sprünge noch möglich sind (Time to live, TTL). Die Auswirkungen dieser Statistiken auf die Propagation einer Nachricht sind analog zu denen in der dritten Schicht des OSI-Modells. 
+
+Jede Nachricht enthält eine im Netzwerk eindeutige ID, mit der Antworten wieder an den Absender zurückgesendet werden können. Leitet ein Servent eine Nachricht weiter und bekommt später eine neue Nachricht, beispielsweise einen Query-Hit zurück, so kann er anhand dieser ID den Servent ermitteln, an den die Nachricht zurückgesendet werden muss.
+
+Wird über das Protokoll ein Servent gefunden, welcher die gewünschte Datei besitzt, kann eine Verbindung mit diesem aufgebaut werden. Da der Download von Dateien nicht im Gnutella-Protokoll enthalten ist, wird dafür auf HTTP zurückgegriffen. In der Query-Hit-Nachricht sind die nötigen Informationen enhalten, damit an den Servent eine HTTP-GET-Anfrage, für die gewünschte Datei, gesendet werden kann.
+
+
+\subsection{Schwächen des Protokolls}
+\label{sec:GnutellaWeaknesses}
+Der Mechanismus der Breitensuche zur Verteilung von Nachrichten im Gnutella-Netz\-werk generiert eine signifikante Menge an Daten. Eine Suchanfrage im Netzwerk (bei Nutzerzahlen in der Größe von Napster, siehe Kapitel \ref{sec:NapsterÜberblick}) generiert bereits 800MB an Daten. Bei durchschnittlich drei Anfragen pro Sekunde führt dies bereits zu 2.4GB/s. Anzumerken ist, dass diese Werte sich rein auf das Gnutella-Protokoll beziehen. Der eigentliche Download von Dateien ist hier nicht inkludiert  \parencite{ritter2001gnutella}.
+
+Analysen des Gnutella-Netzwerkes zeigen, dass bereits das Entfernen von einigen wenigen Servents zu Problemen in der Konnektivität führen kann. Dadurch können sehr effektiv Denial-of-Service Attacken durchgeführt werden \parencite{ripeanu2001peer}. 
+
+Das Netzwerk kann auch dazu benutzt werden, Distributed-Denial-of-Ser\-vice-At\-tacken gegen andere Hosts durchzuführen. Ein böswilliger Servent antwortet auf alle Query-Nachrichten mit der IP-Adresse eines Hosts, den er attackieren möchte. Der böswillige Servent gaukelt vor, die angefragte Datei zu besitzen. Nun versucht der gutmütige Servent eine Verbindung zum Opfer aufzubauen. Wenn der böswillige Servent auf genügend Anfragen antwortet, kann dadurch das Opfer in die Knie gezwungen werden \parencite{zeinalipour2002exploiting}.
+
+\section{Napster}
+\subsection{Überblick}
+\label{sec:NapsterÜberblick}
+Das Unternehmen Napster entwickelte ein gleichnamiges Programm zum Austauschen von Dateien. Den Fokus legte Napster vor allem auf den Austausch von Musik. So zählte Napster von seiner Veröffentlichung im Jahr 1999 bis 2001 knapp 60 Millionen Nutzer~\parencite{poblocki2001napster}. Napster sah sich jedoch mit Klagen aus der Musikindustrie konfrontiert. Nachdem Napster mehrere Klagen verlor, wurden sie gerichtlich gezwungen den Betrieb einzustellen.
+
+\subsection{Relevanz}
+Im Gegensatz zum völlig dezentral organisierten Gnutella, verfolgte Napster einen anderen Zugang zur Strukturierung eines Peer-to-Peer-Netzwerkes. Man setzte auf einen zentralen Server,
+ welcher die Nutzer miteinander verknüpfte (siehe Kapitel \ref{sec:NapsterAufbau}). Somit ist Napster ein hybrides Peer-to-Peer-Netzwerk mit zentraler Indexierung. Der Erfolg von Napster führte dazu, dass andere Peer-to-Peer-Netzwerke, wie BitTorrent oder Soulseek, ihre respektiven Netzwerke in einer ähnlichen Struktur mit einem gewissen Grad an Zentralisierung aufbauten. 
+
+\subsection{Aufbau}
+\label{sec:NapsterAufbau}
+Die Grundlage für den folgenden Abschnitt bildet die Spezifikation von Napster. Da keine offizielle Spezifikation verfügbar ist, wird auf eine alternative Spezifikation zurückgegriffen. Diese wird vom Entwickler des Open-Source Napster-Clients Opennap bereitgestellt \parencite{napsterSpecification}. 
+
+Damit ein Nutzer Zugriff zum Netzwerk erhält, wird ein Account beim zentralen Napster Server benötigt. Dieser Server bildet das Herzstück des Netzwerkes. Zur Kommunikation zwischen Server und Client wird ein eigenes Protokoll auf Basis von TCP verwendet. Der Server bietet folgende Funktionen, welche für den Datenaustausch relevant sind:
+
+\begin{itemize}
+    \item \textbf{Teilen einer Datei:} Der Nutzer gibt dem Server bekannt, dass er eine oder mehrere Dateien besitzt. Diese können nun von anderen Nutzern angefordert werden. 
+    \item \textbf{Downloadanfrage:} Es wird eine Anfrage an den Server gesendet, eine Datei von einem anderen Nutzer downloaden zu dürfen. Der Server antwortet mit den Informationen, welche benötigt werden, damit eine Verbindung zu dem Nutzer aufgebaut werden kann.
+    \item \textbf{Datei suchen:} Per Suchtext können die Dateien, welche von anderen Nutzern geteilt werden, durchsucht werden. Es können mehrere Suchkriterien, wie beispielsweise die Bitrate, angegeben werden.
+\end{itemize}
+Der Napster Server bietet zusätzlich Funktionalitäten wie Chats und Freundeslisten an, jedoch sind diese für den Datenaustausch nicht wichtig.
+
+Der reguläre Ablauf eines Datenaustausches über das Napster-Netzwerk sieht daher wie folgt aus: Ein Nutzer sendet als erstes eine Suchanfrage an den Server. Dieser antwortet mit einer Liste von Nutzern, welche eine passende Datei über das Netzwerk teilen. Im nächsten Schritt wird ein Nutzer ausgewählt, von dem die Datei heruntergeladen werden soll. Mit dem ausgewählten Nutzer wird nun eine Verbindung aufgebaut. Veranschaulicht wird dieser Ablauf in Abbildung \ref{fig:NapsterCommunications}. Hier ist anzumerken, dass je nach Firewall-Einstellungen ein anderer Nutzer die Verbindung aufbauen muss. Der Napster Server regelt, welcher Nutzer die Verbindung aufbauen muss. 
+
+\begin{figure}[]
+    \centering
+    \includesvg[scale=1.2]{napster}
+    \caption{Napster-Kommunikationen.}
+    \label{fig:NapsterCommunications}
+\end{figure}
+
+Ist die Verbindung aufgebaut, so wird die gewünschte Datei übertragen. Dazu identifiziert sich der Nutzer, welcher die Datei erhalten möchte, mit seinem Napster-Benutzer\-namen und dem Namen der Datei. Optional kann noch ein Byte-Offset angegeben werden, falls ein bereits begonnener Download wieder aufgenommen werden soll. Als Antwort wird direkt die gewünschte Datei übertragen. Die Daten werden in sequenzieller Reihenfolge über die TCP-Verbindung übertragen. 
+
+\subsection{Schwächen von Napster}
+Als wohl größte Schwäche des Napster-Netzwerkes kann die Abhängigkeit des gesamten Netzwerkes vom zentralen Server gesehen werden. Wie \textcite{napsterCourtRuling} im Februar 2001 berichtete, wurde Napster gerichtlich gezwungen, ihren Dienst einzustellen. Damit war auf einen Schlag das gesamte Netzwerk abgeschaltet. Somit konnten Nutzer keine Daten mehr austauschen, da der Server als Vermittlungsstelle ausfiel. Da die Server-Software nicht frei verfügbar war, konnten auch keine Server von Drittparteien betrieben werden.
+
+Das Napster-Netzwerk war rein auf die Übertragung von mp3-Dateien ausgelegt. Andere Dateiformate wurden nicht unterstützt. Somit musste für solche Dateiformate auf andere Netzwerke zurückgegriffen werden. Um gegen diese Limitierung anzukommen, wurden auch Tools wie \emph{Wrapster} entwickelt \parencite{napsterWrapster}. Wrapster erlaubte es, beliebige Dateien in eine, von Napster unterstützte mp3-Datei einzupacken. Dadurch konnte wieder das Napster-Netzwerk für den Datenaustausch benutzt werden.
+
+\section{BitTorrent}
+
+\subsection{Überblick}
+Im Jahr 2001 veröffentlichte \textcite{BitTorrentRelease} das von ihm entwickelte BitTorrent-Protokoll und einen dazugehörigen Client. Mittlerweile werden das Protokoll und der Client vom Unternehmen Rainberry, Inc, welches von Cohen gegründet wurde, weiterentwickelt. Das BitTorrent-Protokoll ist öffentlich verfügbar, was es Entwicklern ermöglicht, selbst eigene Clients zu implementieren. \textcite{BitTorrentClientMarketshare} veröffentlichte eine Liste der am meisten verbreiteten BitTorrent-Clients. 
+
+\subsection{Relevanz}
+BitTorrent ist ähnlich strukturiert wie Napster, jedoch mit einem entscheidenden Unterschied. Bei Napster übernimmt ein einziger Server die Indexierung aller verfügbaren Dateien. BitTorrent hingegen nutzt viele verschiedene Server. Somit betreibt es dezentrale Indexierung. 
+Die Relevanz von BitTorrent spiegelt sich auch in seiner Verbreitung wider. Wie aus einem Bericht des Unternehmens \textcite{BitTorrentTrafficPaloalto} hervorgeht, war BitTorrent für 3,35\% des gesamten weltweiten Datenverkehrs verantwortlich. In der Kategorie "File-Sharing" machte BitTorrent sogar mehr als die Hälfte des gesamten Datenverkehrs aus. In einem aktuelleren Bericht von \textcite{BitTorrentTrafficSandvine} beträgt der Anteil von BitTorrent am Upload-Datenverkehr 9,7\%. Damit liegt es im Ranking auf Platz Eins. 
+
+\subsection{Aufbau}
+\label{sec:BitTorrentAufbau}
+Grundlage für den folgenden Abschnitt liefert die BitTorrent Protocol Specification \parencite{BitTorrentSpecification}. 
+Den Kern des BitTorrent-Protokolls bildet die \emph{.torrent} Datei. Eine .torrent Datei enthält alle relevanten Metadaten, welche für den Datenaustausch
+mittels des BitTorrent-Protokolls benötigt werden. Die in dieser Datei enthaltenen Metadaten bzw. die Datei selbst werden auch als „Torrent“ bezeichnet. Jeder Torrent wird anhand eines SHA1-Hashes eindeutig identifiziert. Dieser wird als \emph{Info-Hash} bezeichnet. BitTorrent ermöglicht es, neben Dateien auch ganze Ordner zu teilen. Alle Dateien und Ordner, die in einem Torrent enthalten sind, werden in sogenannte \emph{Pieces} unterteilt. Die Dateien/Ordner werden hintereinander gereiht und dann gestückelt. Jedes Piece hat die gleiche Länge, mit Ausnahme des letzten Piece, welches abgeschnitten wird. 
+
+Ein Peer wird in zwei Kategorien unterteilt. Zum einen, die Seeder, und zum anderen, die Leecher. Als Seeder bezeichnet man einen Peer, welcher den Torrent vollständig heruntergeladen hat und diesen nun anderen zum Download zur Verfügung stellt (sogenanntes seeding). Einen Peer, der hingegen den Torrent noch nicht, oder nur teilweise, heruntergeladen hat nennt man Leecher. Dieser lädt von anderen Seeder und Leecher die Daten des Torrents herunter (sogenanntes leeching). Von einem anderen Leecher können nur die Daten, die dieser bereits heruntergeladen hat, bezogen werden. 
+
+Die Server im BitTorrent-Netzwerk werden als \emph{Tracker} bezeichnet. Für die Verwendung dieser wird, im Gegensatz zu Napster, kein Account benötigt. Der Tracker ist ein Webserver, der Informationen zu einer Vielzahl an Torrents verwaltet. Der Tracker speichert, welche Peers aktuell einen Torrent seeden/leechen. Diese Liste wird als \emph{Swarm} bezeichnet. Der Webserver besitzt einen einzigen Endpunkt namens \emph{announce}. Möchte ein Peer beginnen, einen Torrent zu downloaden, so muss als erstes eine Anfrage an diesen Endpunkt gesendet werden. Dadurch fügt der Tracker den Peer zum Swarm hinzu. Gleichzeitig erhält der Client als Antwort vom Tracker die Verbindungsdaten von anderen Peers im selben Swarm.
+
+Die Betreiber von Trackern bieten üblicherweise eine Website an, welche zumindest folgende Funktionalitäten bietet:
+\begin{itemize}
+    \item \textbf{Registrieren von Torrents:} Eine .torrent-Datei kann beim Tracker hochgeladen werden. Damit beginnt der Tracker Peers zu vermitteln. 
+    \item \textbf{Suche:} Das Verzeichnis aller dem Tracker bekannten Torrents, kann durchsucht werden. Hier erhält man auch Informationen über die Anzahl der Seeder/Leecher eines Torrent. Gibt es keinen Seeder für einen Torrent so spricht man von einem "toten" Torrent.
+    \item \textbf{Download einer .torrent-Datei:} Die zu einem Torrent gehörende .torrent-Datei wird zum Download angeboten. 
+\end{itemize}
+    
+Der Austausch von Daten mit anderen Peers erfolgt über eine TCP-Verbindung. Jedoch setzt BitTorrent, im Gegensatz zu Napster und Gnutella, darauf, von mehreren Peers gleichzeitig Daten zu beziehen. Von einem Peer werden einzeln die Pieces, in denen die Daten gestückelt sind, bezogen.
+Um dies zu organisieren, wird das \emph{BitTorrent-Peer-Protokoll} verwendet. 
+Der BitTorrent-File-Sharing-Prozess wird in Abbildung \ref{fig:BitTorrentProcess} dargestellt.
+
+\begin{figure}[]
+    \centering
+    \includesvg[width=0.75\textwidth]{bittorrent Process} %{CS0031}
+    \caption{BitTorrent File-Sharing Prozess. Nachempfunden von \textcite{xia2010survey}. }
+    \label{fig:BitTorrentProcess}
+\end{figure}
+
+Am Beginn einer Verbindung tauschen beide Peers einen Handshake aus. Der Peer, der die Verbindung eröffnet hat, sendet als erster seinen Handshake. Darin enthalten ist unter anderem der Info-Hash, anhand dessen der andere Peer zuordnen kann, welcher Torrent ausgetauscht werden soll. Ist der Handshake erfolgreich durchgeführt, so erfolgt die restliche Kommunikation mittels der Nachrichtenarten, die im Protokoll spezifiziert sind. Diese sind: 
+\begin{itemize}
+    \item \textbf{Keep-Alive} wird verwendet um zu signalisieren, dass die Verbindung noch aufrechterhalten werden soll. Wird keine Keep-Alive Nachricht (oder eine andere) innerhalb einer bestimmten Zeit erhalten, so kann die Verbindung geschlossen werden. 
+    \item \textbf{Choke} teilt mit, dass man die Verbindung suspendiert. Dadurch werden keine Daten übertragen. Dies ist der Standardzustand.
+    \item \textbf{Unchoke} teilt mit, dass die Verbindung nicht mehr suspendiert wird. Nun können Daten übertragen werden.
+    \item \textbf{Interested} teilt mit, dass man an den Daten des anderen Peers interessiert ist.
+    \item \textbf{Not Interested} teilt mit, dass man nicht an den Daten des anderen Peers interessiert ist. Dies ist der Standardzustand.
+    \item \textbf{Have} informiert, dass man ein Piece heruntergeladen hat. 
+    \item \textbf{Bitfield} übermittelt eine Liste an Pieces, die man bereits heruntergeladen hat. Diese Nachricht ist optional und kann nur direkt nach dem Handshake übermittelt werden. 
+    \item \textbf{Request} bittet den anderen Peer um Übertragung eines Piece. Das Piece wird in \emph{Blocks} unterteilt. Für jeden Block innerhalb des Piece wird eine eigene Nachricht gesendet. Durch ein Byte-Offset wird festgelegt, welcher Block angefragt wird.
+    \item \textbf{Piece} wird als Antwort auf einen Request versendet. Das Piece enthält den im Request angeforderten Block.
+    \item \textbf{Cancel} teilt mit, dass man keine Antwort auf einen Request mehr benötigt. Diese Nachrichtenart wird verwendet, falls Anfragen für ein Piece an verschiedene Peers gesendet werden.
+\end{itemize}
+
+\subsection{Schwächen des Protokolls}
+
+Die Verwendung eines BitTorrent Clients kann zu Problemen in Bezug auf die TCP-Congestion-Control führen. Zurückzuführen ist das auf die Größe der Buffer von Routern. Wie \textcite{gettys2011Bufferbloat} beschreibt, können Pakete in einem vollen Buffer mehrere Sekunden darin verweilen, bis sie versendet werden. Grundsätzlich kümmert sich die TCP-Congestion-Control darum, allen TCP-Verbindungen gleichmäßig viel Bandbreite zur Verfügung zu stellen. Da ein BitTorrent-Client aber mehrere TCP-Verbindungen aktiv betreibt, erhält der Client eine unfaire Bevorzugung. Dadurch leiden andere Applikationen im selben Netzwerk, wie beispielsweise ein VoIP-Programm, an zu hoher Latenz. Dies kann  ihre Benutzbarkeit erheblich einschränken. Das BitTorrent-Protokoll wurde aufgrund dieser Problematik erweitert. Alternativ zu TCP wurde die Möglichkeit geschaffen, eine Verbindung auch über UDP aufzubauen. \textcite{norberg2009utorrent} entwickelte dafür das \emph{uTorrent transport protocol}. Das uTorrent transport protocol setzt auf UDP auf und implementiert den Congestion-Control-Algorithmus LEDBAT (Low Extra Delay Background Transport) \parencite{shalunov2012low}. LEDBAT ermöglicht es, die maximale Bandbreite zu nutzen, wenn kein anderer Datenverkehr stattfindet. Benötigen andere Applikationen auch Bandbreite, so verringert LEDBAT seine eigene benötigte Bandbreite.

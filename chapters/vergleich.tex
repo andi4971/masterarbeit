@@ -1,0 +1,79 @@
+\chapter{Vergleich Traditionell zu Peer-to-Peer}
+\label{cha:Vergleich}
+
+In diesem Kapitel erfolgt eine Gegenüberstellung von traditionellem Filesharing zu Peer-to-Peer Filesharing. Es werden die Vor- und Nachteile der jeweiligen Methoden in Bezug auf verschiedene Aspekte beschrieben.
+
+\section{Download}
+\label{sec:VergDownload}
+Die Downloadgeschwindigkeit ist für Endnutzer das relevanteste Kriterium in Bezug auf einen Dateidownload. Die Geschwindigkeit, welche konkret für einen Download erreicht werden kann, ist von mehreren Faktoren abhängig. Dazu zählen:
+\begin{itemize}
+    \item Geschwindigkeit der Internetverbindung zum ISP.
+    \item Geschwindigkeit der Internetverbindung des Content-Providers zum ISP des Endkunden.
+    \item Auslastung der Internetverbindung des Content-Providers.
+\end{itemize} 
+Ein Content-Provider ist überlicherweise ein Unternehmen, welches Daten bereitstellt. Umso weiter der Server eines Unternehmens vom ISP des Endkunden entfernt ist, desto langsamer ist tendenziell die Verbindung. Große Unternehmen umgehen dies, indem sie auf Content-Delivery Netzwerke setzen. Dadurch ist auch ihre eigene Internetverbindung weniger belastet. Content-Delivery Netzwerke verlangen jedoch einen dementsprechenden monetären Aufwand. Dazu mehr in Kapitel \ref{sec:VergleichKosten}. 
+
+Grundsätzlich werden hier Daten immer nur von einem einzigen Server bezogen. Folgendes Beispiel illustriert die Problematik, die auftritt, wenn mehrere Endnutzer gleichzeitig von einem Server über das Internet Daten herunterladen möchten. 
+
+\begin{figure}[H]
+    \centering
+    \includesvg[width=.75\textwidth]{downloadTopology} %{CS0031}
+    \caption{Beispielhafte Netzwerk Topografie.}
+    \label{fig:NetworkTopography}
+\end{figure}
+
+In Abbildung \ref{fig:NetworkTopography} ist ein Netzwerk skizziert, in dem der Con\-tent-Provider eine Upload-Geschwindigkeit von 100 Mbit/s zum ISP der Endkunden hat. Angenommen der Con\-tent-Provider veröffentlicht eine große Datei (z.\,B. Videospiel) und alle Endkunden möchten diese gleichzeitig beziehen, so wird in diesem Fall die Verbindung des Con\-tent-Providers vollständig ausgelastet. Die Verbindung der Endkunden jedoch hat noch Kapazitäten frei. Dadurch dauert der Download für die Endkunden länger. Die Downloadgeschwindigkeit eines einzelnen Endkunden erhöht sich erst, wenn ein anderer den Download abgeschlossen hat. Wie \textcite{kim2007impact} zeigen, hat die Download-Geschwindigkeit einen signifikanten Einfluss auf die Zufriedenheit der Kunden. Daher kann durch langsame Download-Geschwindigkeiten mit einer Reduktion der Kundenzufriedenheit gerechnet werden. Der Content-Provider könnte dieses Problem minimieren, indem mehr in die Internetverbindung investiert wird. Das führt jedoch, unter Umständen zu nicht leistbaren Mehrkosten (siehe Kapitel \ref{sec:VergleichKosten}). 
+
+Betrachtet man das Beispiel in Abbildung \ref{fig:NetworkTopography} erneut unter Verwendung eines Peer-to-Peer Filesharing-Netzwerkes wie BitTorrent, so verändert sich der Prozess des Datenaustausches. Möchten alle Endkunden gleichzeitig die Datei vom Content-Provider beziehen, lasten sie damit die Leitung des Content-Providers wieder vollständig aus. Jedoch erhöhen sich, im Gegensatz zu vorher, die Downloadgeschwindigkeiten der Endkunden bereits kurz nach Beginn des Downloads. Dies geschieht, da jeder Endkunde die von ihm heruntergeladenen Daten den anderen Endkunden zur Verfügung stellt. Die Endkunden können somit schneller als vorher ihren Download abschließen. 
+
+Anzumerken ist, dass dies das Verhalten unter idealen Konditionen darstellt. Die in der Praxis mögliche Erhöhung der Downloadgeschwindigkeit hängt von den Endkunden ab. Stellten eine große Zahl der Endkunden die heruntergeladene Datei nach Vollendung des Downloads anderen Endkunden nicht weiter zur Verfügung, so müssen diese sich an den Content-Provider direkt wenden. 
+
+
+\section{Kosten}
+\label{sec:VergleichKosten}
+ Die Kosten für den Betrieb eines Peer-to-Peer-Netzwerkes unterscheiden sich stark von den Kosten, die beispielsweise für ein Content-Delivery-Netzwerk nötig sind. Ein einzelner Server genügt, um die Funktionalität eines Peer-to-Peer Netzwerkes zu gewährleisten. Dieser Server könnte jedoch auch problemlos für traditionelle Downloads benutzt werden. Der Unterschied zu einer Peer-to-Peer basierten Lösung wird klar, sobald versucht wird, die eingesetzte Infrastruktur zu skalieren. 
+ 
+ Der traditionelle Ansatz sieht vor, für zusätzlich benötigte Rechenkapazität/Bandbreite mehr Server zu beschaffen. Dies führt zu mehr Kosten für die Hardware und erhöht den Aufwand für die Verwaltung der Infrastruktur. Alternativ könnte auf ein Content-Delivery-Netzwerk wie Akamai oder Cloudfront zurückgegriffen werden. Um hingegen ein Peer-to-Peer-Netzwerk zu skalieren, kann, neben einer Erhöhung der Anzahl an Servern, zusätzlich auf die Endkunden als Unterstützung zurückgegriffen werden. Endkunden, welche bereits Daten heruntergeladen haben, teilen diese mit anderen Endkunden. Dadurch kann die Last auf den eigenen Servern reduziert werden. Die Einbindung der Endkunden ermöglicht die Bildung eines dezentralen Peer-to-Peer basierten Content-Delivery-Netzwerkes. \textcite{migliardi2015feasibility} entwickelten auf Basis von BitTorrent und Bitcoin eine Proof of Concept Implementierung eines Content-Delivery-Netzwerkes. Die Autoren zeigten in ihrer Arbeit, wie mittels ihres Content-Delivery-Netzwerkes kostenschonender Webauftritt für eine Gruppe von Handwerkern organisiert werden kann. 
+
+ Ein Problem, welches auch von \textcite{migliardi2015feasibility} angesprochen wurde, ist, dass für ein ordentlich funktionierendes Content-Delivery-Netzwerk zu jeder Zeit ausreichend Rechner mit dem Netzwerk verbunden sein müssen. Ist dies nicht der Fall, so muss mit Beeinträchtigungen oder Ausfällen des Netzwerkes gerechnet werden. 
+
+ Eine Kombination aus einem klassischen Content-Delivery-Netzwerk und einem Peer-to-Peer-Netzwerk zu einem gemeinsamen hybriden Netzwerk, stellt eine Möglichkeit dar, dieses Problem zu minimieren. \textcite{xu2006analysis} analysierten solch ein hybrides Netzwerk. Die Autoren konnten feststellen, dass ein hybrides Netzwerk die Reservierungskosten für Bandbreite innerhalb des Content-Delivery-Netzwerkes signifikant reduziert. Die Kostenreduktion findet ohne Einschränkung der Übertragungsqualität statt.
+
+\section{Sicherheit}
+
+Im folgenden Abschnitt werden mögliche Sicherheitsrisiken, die bei der Verwendung von Peer-to-Peer-Netzwerken auftreten können, vorgestellt. 
+
+\subsection{Offene Ports}
+Da in Peer-to-Peer-Netzwerken Verbindungen mit vielen verschiedenen Computern aufgebaut werden müssen, entstehen mögliche Sicherheitsrisiken. Für den Aufbau einer Verbindung wird ein offener Port bei zumindest einem Peer benötigt. Diesen Port müssen andere Peers benutzen, um erfolgreich eine Verbindung aufzubauen. Jedoch sind bei den in Haushalten vorhandenen Routern die zuständigen Firewalls standardmäßig so konfiguriert, dass kein Port geöffnet ist. Daher kann ohne Änderung an den Firewall-Einstellungen nur eine Verbindung mit anderen Peers aufgebaut werden, wenn man selber die Verbindung aufbaut. Ändert man dieses Verhalten, so ist man anfällig für potenzielle Attacken von außerhalb des eigenen Netzwerkes. 
+
+Ein Angreifer kann mittels eines Port-Scanning-Tools, wie Nmap nach offenen Ports hinter einer IP-Adresse scannen. Findet der Angreifer einen offenen Port, weiß er, dass ein Computer hinter dieser IP-Adresse aktiv ist. Mit diesem Wissen könnte eine Distributed-Denial-Of-Service-Attacke gegen den Computer durchgeführt werden. Für die Attacke könnte das Gnutella-Netzwerk (siehe Kapitel \ref{sec:GnutellaWeaknesses}) missbraucht werden. Weiters zeigen \textcite{el2007bottorrent}, wie man unter Verwendung des BitTorrent-Neztwerkes Distributed-Denial-Of-Service-Attacken durchführen kann.
+
+
+%Wie in Kapitel \ref{sec:GnutellaWeaknesses} beschrieben, könnte das Gnutella-Netzwerk für eine Distributed-Denial-Of-Service-Attacke missbraucht werden. Nicht nur das Gnutella-Netzwerk kann für eine solche Attacke benutzt werden. Wie \textcite{el2007bottorrent} zeigten, kann auch das BitTorrent-Netzerk, auf verschiedene Arten für eine Distributed-Denial-Of-Service-Attacke missbraucht werden.
+
+\subsection{Böswillige Peers}
+Ein böswilliger Peer innerhalb des Netzwerkes könnte Angriffe initiieren. Da gutmütige Peers im Regelfall offen sind für Verbindungen mit beliebigen anderen Peers, bereitet es Probleme, wenn ein böswilliger Peer aus dem Netzwerk verbannt werden soll. Die zur Identifikation nötigen Daten beschränken sich bei völlig dezentral organisierten Netzwerken wie Gnutella meist nur auf die IP-Adresse. Nur anhand der IP-Adresse einen Peer aus dem Netzwerk zu verbannen, ist jedoch ineffizient, da IP-Adressen leicht geändert werden können. Wird ein böswilliger Peer entdeckt, müsste dieser den anderen Peers mitgeteilt werden. Das Gnutella-Netzwerk enthält keinen Mechanismus, dies zu tun. Weiters erschwerend ist, dass gewährleistet werden müsste, dass der gemeldete Peer sich auch wirklich böswillig verhalten hat. 
+
+\subsection{Validität der Dateien}
+Die in Peer-to-Peer-Netzwerken ausgetauschten Daten stellen einen weiteren möglichen Angriffsvektor dar. Gelingt es, den Prozess des Datenaustausches zu manipulieren, kann Schadsoftware direkt auf dem Zielcomputer platziert werden. Die Netzwerke Gnutella und das ursprüngliche Napster sind beide sehr anfällig für eine solche Attacke. Eine Datei kann in den beiden Netzwerken auf vielen Rechnern verfügbar sein. Es gibt jedoch keine Möglichkeit zu prüfen, ob die Version einer Datei mit der von einem anderen Peer ident ist. Daher würde es genügen, dem Netzwerk bekannt zu geben, eine beliebte Datei zu besitzen, aber jedoch bei allen Download-Anfragen eine Schadsoftware zurückzusenden. Peers hätten keine Möglichkeit, die übertragene Datei zu validieren. In beiden Netzwerken werden Dateien nur immer von jeweils einem Peer heruntergeladen. Somit kann bereits mit einem Peer Schadsoftware vertrieben werden. 
+
+BitTorrent hingegen verfolgt den Ansatz, von mehreren Peers Daten zu beziehen (siehe Kapitel \ref{sec:BitTorrentAufbau}). Die erhaltenen Daten werden pro Piece mittels eines Hashing-Algorithmus validiert. Somit kann ein Peer, welcher mutwillig schädliche Daten übermittelt, keinen Schaden anrichten. Diese Validierung stellt jedoch nur fest, ob die im Torrent beschriebenen Daten korrekt übertragen wurden. Erstellt ein Angreifer einen Torrent für eine Schadsoftware, bietet die Validierung mittels Hashes keinen Schutz. Damit dieser Angriff erfolgreich sein kann, muss der Angreifer den schädlichen Torrent in Umlauf bringen. Eine mögliche Strategie wäre, den Namen von beliebten Torrents zu missbrauchen. Unachtsame Nutzer könnten den schädlichen Torrent herunterladen und zu Opfern werden. Es gibt jedoch Möglichkeiten, schädliche Torrents zu identifizieren, bevor sie heruntergeladen wurden. \textcite{blackstonepredict} entwickelten ein Machine-Learning-Modell, mit dem schädliche Torrents identifiziert werden können. Dieses Modell ist imstande, bis zu 95\% der schädlichen Torrents auch als solche zu klassifizieren.
+
+%auch bei traditionell
+
+%file validation 
+%faulty client
+%open port
+%ddos
+
+
+\section{Updates}
+Peer-to-Peer-Protokolle und die dazugehörigen Clients benötigen immer wieder Aktualisierungen. Hierbei gilt es zu beachten, dass Aktualisierungen nicht die Funktionalität eines bereits bestehenden Netzes beeinträchtigen. Zudem muss den Clients mitgeteilt werden, dass eine Aktualisierung vorhanden ist. Je nach Architektur des Netzwerkes bieten sich verschiedene Möglichkeiten an, Aktualisierungen vorzunehmen. 
+
+In einem Netzwerk mit zentraler Indexierung, wie Napster, müssen Peers immer Kontakt mit dem zentralen Server suchen. Dieser Kontakt kann dazu benutzt werden, um Peers über eine anstehende Aktualisierung zu informieren. Somit lässt sich ein Update-Mechanismus analog zu klassischer Software, welche über das Internet vertrieben wird, implementieren. Dieser Ansatz wird beispielsweise von Napster genutzt. Da Napster sein Protokoll nicht öffentlich zugänglich machte und es somit nur einen einzigen offiziellen Client gab, konnte Napster den Client und das Protokoll in einem aktualisieren. 
+
+Dieser Ansatz stößt jedoch an seine Grenzen, wenn ein Netzwerk nach dezentraler Indexierung aufgebaut ist. Ohne eine zentrale Instanz, welche vorgibt, dass eine Aktualisierung durchzuführen ist, lässt sich eine gleichzeitige Aktualisierung eines Netzwerkes schwer koordinieren. In einem völlig dezentral organisiertem Netzwerk ist ein solcher Ansatz aufgrund von fehlender Zentralisierung grundsätzlich nicht möglich. 
+
+Daher nutzen Netzwerke wie BitTorrent und Gnutella einen anderen Mechanismus, um Aktualisierungen durchzuführen. Beide Protokolle erlauben es, Protokoll-Er\-weiterung\-en zu entwickeln. Beim Aufbau einer Verbindung können sich Peers darüber austauschen, welche Erweiterungen sie jeweils unterstützen. Alle Erweiterungen, die von beiden Peers unterstützt werden, können in der Kommunikation verwendet werden. Somit können Peers neue Funktionalitäten benutzen, wenn sie diese unterstützen und gleichzeitig eine Abwärtskompatibilität gewährleisteten. 
+
+Für die Entwickler von Clients solcher Protokolle bietet dieser Mechanismus auch Vorteile. Sie können damit rechnen, dass ihr Client weiter funktioniert, auch wenn eine neue Erweiterung veröffentlicht wird. Aufgrund der Abwärtskompatibilität können nicht aktuelle Clients weiterverwendet werden, während andere Client-Hersteller bereits neue Erweiterungen unterstützen. 

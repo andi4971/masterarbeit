@@ -1,0 +1,99 @@
+\chapter{Evaluierung}
+\label{cha:Evaluierung}
+In diesem Kapitel wird der implementierte BitTorrent-Client evaluiert. Dabei wird als erstes die Korrektheit des Bencode-Parsers überprüft. Weiters wird der Client als Gesamtes anhand zweier Kriterien evaluiert.
+
+\section{Bencode-Parser}
+
+Um den implementierten Bencode-Parser zu testen, wird das Ergebnis des Parsers mit dem eines bereits bestehenden Parsers verglichen. Ziel ist es, zu prüfen, ob der implementierte Parser alle Felder richtig parsen kann. 
+
+\subsection{Vorgehensweise}
+
+Als bestehender Parser wird ein online verfügbarer Parser\footnote[1]{https://chocobo1.github.io/bencode\_online} verwendet. Dieser Parser wandelt eine Datei im Bencode-Format in JSON um. Dadurch wird das Ergebnis lesbar und lässt sich mit der Ausgabe des implementierten Parsers vergleichen. Als Testdatei wird ein Torrent der Linux-Distribution Debian verwendet.
+
+\subsection{Ergebnis}
+Die Ausgabe des Online-Parsers ist in Programm \ref{prog:OnlineParserResult} zu sehen. Das Feld \verb|url-list| ist für den Client nicht relevant und kann daher ignoriert werden. Die Ausgabe des implementierten Parsers ist in Programm \ref{prog:ImplementedParserResult} ersichtlich. Vergleicht man die Ausgaben der beiden Parser, lässt sich feststellen, dass die gleichen Daten extrahiert wurden. Daher kann davon ausgegangen werden, dass der Parser funktioniert. Bezüglich des Feld \verb|pieces| ist anzumerken, dass dieses Feld die Hashes der Zieldatei beinhaltet und diese hier aufgrund ihrer Länge ausgelassen werden.
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+{
+    "announce": "http://bttracker.debian.org:6969/announce",
+    "comment": "\"Debian CD from cdimage.debian.org\"",
+    "created by": "mktorrent 1.1",
+    "creation date": 1671279452,
+    "info": {
+       "length": 3909091328,
+       "name": "debian-11.6.0-amd64-DVD-1.iso",
+       "piece length": 262144,
+       "pieces": "..."
+       },
+    "url-list": [
+       ...
+    ]
+}
+\end{GenericCode}
+\caption{Ausgabe des Online-Parsers.}
+\label{prog:OnlineParserResult}
+\end{program}
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+TorrentInitializer - Parsed:       	debian-11.6.0-amd64-DVD-1.iso
+TorrentInitializer - Pieces:       	14912
+TorrentInitializer - Announce:     	http://bttracker.debian.org:6969announce
+TorrentInitializer - Comment:      	"Debian CD from cdimage.debian.org"
+TorrentInitializer - CreatedBy:    	mktorrent 1.1
+TorrentInitializer - CreationDate: 	1671279452
+TorrentInitializer - piece length  	256 kB (262144 Byte)
+TorrentInitializer - size:         	3,6 GB (3909091328 Byte)
+\end{GenericCode}
+\caption{Konsolenausgabe des implementierten Parsers.}
+\label{prog:ImplementedParserResult}
+\end{program}
+
+\section{Datei-Download}
+
+Im folgenden Abschnitt wird der BitTorrent-Client in Bezug auf den Datei-Down\-load evaluiert. Dabei werden zwei Aspekte des Clients überprüft. Ein Aspekt ist die Geschwindigkeit, mit der ein Torrent heruntergeladen werden kann. Dazu wird als Vergleich ein bestehender BitTorrent-Client herangezogen. Weiters wird überprüft, ob die heruntergeladene Datei auch den korrekten Inhalt besitzt. 
+
+\subsection{Download-Dauer}
+
+Der implementierte BitTorrent-Client wird mit dem bestehenden Client \emph{Deluge}\footnote[1]{https://deluge-torrent.org/} verglichen, um eine Einschätzung der Downloadgeschwindigkeiten zu erhalten. 
+
+\subsubsection{Vorgehensweise}
+Es wird ein Torrent der Linux-Distribution Debian verwendet, welcher von beiden Clients heruntergeladen wird. Die Größe der Datei ist circa 3,6 Gigabyte. Um möglichst gleiche Bedingungen zu erhalten, werden beide Clients auf maximal 40 Verbindungen limitiert. Der Download wird jeweils fünf Mal durchgeführt. Die Geschwindigkeit der Internetverbindung beträgt 150 MBit/s für den Download und 20 MBit/s für den Upload.
+
+\subsubsection{Ergebnis}
+
+Das Ergebnis der Downloads ist in Tabelle \ref{tab:torrentSpeeds} ersichtlich. Dabei ist zu erkennen, dass der implementierte Client um circa die Hälfte langsamer ist als Deluge. Weiters ist eine beachtliche Schwankung der Download-Dauer zwischen den einzelnen Läufen erkennbar. Anzumerken ist hierbei, dass eine gewisse Schwankung zu erwarten ist, da die Downloadgeschwindigkeit von den Peers, mit denen man verbunden ist, abhängt. 
+
+Für diese Unterschiede zu Deluge gibt es mehrere mögliche Gründe: Der implementierte Client verwendet keine der Protokoll-Erweiterungen, welche unter Umständen einen schnelleren Datenaustausch ermöglichen. Weiters kann der Client nur Verbindungen mittels TCP aufbauen. Dies schränkt den Umfang an möglichen Peers ein, da diese möglicherweise nur mittels UDP Verbindungen erlauben. Ein weiterer Faktor, der zu geringeren Downloadgeschwindigkeiten führt, ist die suboptimale Implementierung. Es werden an mehreren Stellen im Programm viele Byte-Arrays angelegt, welche nur für kurze Zeit benötigt werden. Diese führen zu einem Mehraufwand für die JVM.
+
+\begin{table}[]
+    \caption{Vergleich implementierter BitTorrent-Client (Impl.) mit dem bestehenden Client Deluge.}
+    \label{tab:torrentSpeeds}    
+    \begin{tabularx}{\textwidth}{L|*{4}{L} @{}}
+        \multicolumn{1}{c|}{\textbf{\begin{tabular}[c]{@{}c@{}}Lauf\\ \#\end{tabular}}} & \multicolumn{2}{c}{\textbf{\begin{tabular}[c]{@{}c@{}}Dauer \\ s\end{tabular}}} & \multicolumn{2}{c}{\textbf{\begin{tabular}[c]{@{}c@{}}Ø-Geschwindigkeit\\ Mbit/s\end{tabular}}} \\
+                                                                                        & Impl.                                  & Deluge                                 & Impl.                                         & Deluge                                        \\ \hline
+        1.                                                                              & 984                                    & 472                                    & 31,78                                         & 66,25                                         \\
+        2.                                                                              & 1312                                   & 540                                    & 23,83                                         & 57,91                                         \\
+        3.                                                                              & 1603                                   & 489                                    & 19,51                                         & 63,95                                         \\
+        4.                                                                              & 1121                                   & 573                                    & 27,89                                         & 54,57                                         \\
+        5.                                                                              & 1030                                   & 531                                    & 30,36                                         & 58,89                                         \\ \hline
+        Ø                                                                              & 1210                                   & 521                                    & 26,68                                         & 60,32                                        
+        \end{tabularx}
+\end{table} 
+
+
+\subsection{Datei-Validität}
+Um zu gewährleisten, dass die heruntergeladene Datei auch valide ist, wird die Check\-summe der Datei berechnet. Debian stellt die SHA-256-Checksumme der Distribution auf ihrer Website zur Verfügung\footnote[1]{https://cdimage.debian.org/debian-cd/11.6.0/amd64/bt-dvd/SHA256SUMS}. In Programm \ref{prog:ChecksumDownloadedFile} wird die SHA-256-Checksumme der heruntergeladenen Datei berechnet. Vergleicht man diese Checksumme nun mit jener auf der Debian-Website, kann festgestellt werden, dass diese ident sind. Daher ist gewährleistet, dass die heruntergeladene Datei valide ist.
+
+
+
+\begin{program}
+    \begin{GenericCode}[numbers=none]
+>sha256sum debian-11.6.0-amd64-DVD-1.iso
+55f6f49b32d3797621297a9481a6cc3e21b3142f57d8e1279412ff5a267868d8 debian-11.6.0-amd64-DVD-1.iso
+\end{GenericCode}
+\caption{Abfrage der SHA-256-Checksumme der heruntergeladen Datei.}
+\label{prog:ChecksumDownloadedFile}
+\end{program}
+

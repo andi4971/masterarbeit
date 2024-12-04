@@ -1,0 +1,26 @@
+\chapter{Zusammenfassung und Ausblick}
+\label{cha:Zusammenfassung}
+Das folgende Kapitel beinhaltet eine Zusammenfassung dieser Arbeit. Weiters wird ein Ausblick geboten. 
+
+\section{Zusammenfassung}
+
+Im Rahmen dieser Arbeit wurde zuerst ein Überblick über mehrere Peer-to-Peer File\-sharing Netzwerke aufbereitet. Die Netzwerke Gnutella, Napster und BitTorrent wurden vorgestellt. Die Arbeit zeigt, wie die Netzwerke aufgebaut sind und funktionieren. Fokus wurde dabei darauf gelegt, die Stärken und Schwächen der Netzwerke hervorzuheben. Die Schwächen konzentrierten sich auf Sicherheitsrisiken der Netzwerke. Unter anderem  ist es möglich, beim Gnutella-Netzwerk das Netzwerk für DDoS-Angriffe zu missbrauchen. 
+
+Im folgenden Kapitel wurden die Unterschiede zwischen traditionellem Filesharing und Peer-to-Peer Filesharing-Netzwerken aufgezeigt. Der Vergleich fokussierte sich dabei auf die Aspekte Download, Kosten, Sicherheit und Updates. Anhand dieser Aspekte wurden jeweils die Vorteile und Nachteile der Ansätze evaluiert. Beispielsweise veranschaulichte der Download-Aspekt, wie unter den richtigen Bedingungen ein Download durch Verwendung von Peer-to-Peer für mehrere Nutzer schneller sein kann als mit traditionellem Filesharing. 
+
+Das nächste Kapitel befasste sich mit den kommerziellen Anwendungsgebieten von Peer-to-Peer Filesharing. Dabei wurde gezeigt, wo im kommerziellen Umfeld von Unternehmen und auch Organisationen Peer-to-Peer Filesharing-Netzwerke eingesetzt werden. Hervorgehoben wurden hierbei die Gründe, welche für den Einsatz der Netzwerke von den jeweiligen Entitäten genannt wurden. Eine besondere Rolle spielte hierbei BitTorrent als das am weitesten verbreitete Netzwerk. Neben Anwendungsfällen von BitTorrent, wurden auch Beispiele für von Unternehmen selbst entwickelte Netzwerke geboten. Microsoft verwendet mehrere Netzwerke, mit denen, unter anderem Windows-Updates oder Downloads aus dem Windows-Store ermöglicht werden.   
+
+Schließlich folgte in den verbleibenden Kapiteln die Erstellung eines BitTorrent-Clients. Zuerst wurde im Lösungsdesign, unter Berücksichtigung der BitTorrent-Spe\-zifikation, der Aufbau des Clients präsentiert. Dazu wurden die Aufgaben der einzelnen Komponenten, die der Client benötigt, erläutert. Das Implementierungs-Kapitel beschreibt, wie konkret die einzelnen Komponenten implementiert wurden. Folgend wurde im Kapitel Evaluierung die Implementierung überprüft. Der Client lud dazu mehrmals die gleiche Datei herunter. Die benötigte Zeit wurde mit einem bestehenden Client verglichen. Die Ergebnisse zeigten, dass der implementierte Client um circa die Hälfte länger für den Download benötigt als der bestehende. 
+
+\section{Ausblick}
+
+Im folgenden Abschnitt wird ein Ausblick geboten. Dabei werden die möglichen nächsten Schritte in Bezug auf den BitTorrent-Client erläutert. Weiters wird gezeigt, in welchen Bereichen Peer-to-Peer Filesharing-Netzwerke zukünftig zum Einsatz kommen könnten. 
+
+\subsection{Nächste Schritte}
+
+Eine mögliche Weiterentwicklung des BitTorrent-Clients würde zuerst bei der Optimierung des Datenaustausches ansetzen. Hierbei würde der Fokus auf einer effizienteren Nutzung der erstellten Byte-Arrays liegen. Werden weniger neue Byte-Arrays angelegt, so können Anfragen schneller abgearbeitet und ausgesendet werden. Eine weitere Verbesserung wäre die Unterstützung von BitTorrent-Erweiterungen. Dadurch könnten insgesamt mehr Torrents unterstützt werden und wiederum höhere Geschwindigkeiten erreicht werden.   
+
+
+\subsection{Zukünftige Anwendungsgebiete}
+
+Stetig steigende Datengrößen können Unternehmen dazu bringen, nach neuen Möglichkeiten zu suchen, um ihre Daten an die Kunden zu senden. Hier könnte Peer-to-Peer Filesharing einen Beitrag leisten, die Belastung für Unternehmen zu senken. So testet das Unternehmen Valve, mit seiner Videospielplattform Steam bereits Spieledownloads mittels Peer-to-Peer \parencite{steamP2P}. Speziell für Daten, welche von mehreren Rechnern innerhalb des gleichen Netzwerkes benötigt werden, könnte Peer-to-Peer erhebliche Vorteile bringen. Daten müssten dann nur noch einmal von außerhalb an einen Rechner in das Netzwerk gesendet werden, anstatt für jeden Rechner einzeln.
