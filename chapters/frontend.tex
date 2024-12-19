@@ -1,0 +1,62 @@
+\chapter{Methods and Tools for Compiler Frontends}
+
+In this chapter the methods and tools that are available for the construction of compiler frontends are explained. This explanation is focused on the parser generator ANTLR. The basis for this chapter is the book "The Definitive ANTLR 4 Reference" by \textcite{Antlr4Reference}.
+
+\section{Attributed Grammar}
+
+Using parser generators like ANTLR or Coco-2 requires the definition of the grammar in a specific format. These formats also allow for the declaration of semantic actions in the grammar. Semantic actions have access to the symbols (terminal and non-terminal) of a rule. Each symbol then has attributes associated with it. The combination of a grammar, attributes and semantic actions is called an attributed grammar.  
+
+
+There are two types of attributes. Inherited and synthesized attributes. The former ones are computed based on the attributes of the parent node. Synthesized attributes are based on the attributes of the children nodes.  
+The type of attributes available depends on the parsing strategy. For a top-down strategy the attributes of child-nodes are not available, as they have not been parsed yet. Conversely, when using the bottom-up strategy, the attributes of parent nodes are not available. 
+
+Especially relevant are the attributes of terminal classes. Through the attribute of a terminal class like \texttt{number}, the actual number that this class node holds can be accessed. These kinds of attributes are provided by the lexical analyzer. 
+
+In listing \ref{lst:Coco2ATG} a simple attributed grammar in Coco-2 for arithmetic expressions is shown. This grammar uses semantic actions to calculate the result of an arithmetic expression. Semantic actions are encoded inside \texttt{<< >>} blocks. In this case C\verb|#| code. Synthesized attributes provide the results of the calculations from the child nodes. These attributes are available inside the semantic action where the actual calculation is performed. 
+
+While it is convenient to embed semantic actions directly into the grammar, it is not without disadvantages. By embedding code of a specific language, it is no longer possible to use the same grammar to generate a parser in another language. Parser generators like ANTLR provide multiple different target languages to generate a parser for. 
+
+\begin{GenericCode}[float,numbers=none,caption=Attributed Grammar in Coco-2 for simple arithmetic expressions., label=lst:Coco2ATG]
+Expr<<out int e>> =    LOCAL<<int t = 0; e = 0;>>
+Term<<out e>>             
+{ '+' Term<<out t>>    SEM<<e = e + t;>>
+| '-' Term<<out t>>    SEM<<e = e - t;>>
+}.
+
+Term<<out int t>> =    LOCAL<<int f = 0; t = 0;>>
+  Fact<<out t>>
+  { '*' Fact<<out f>>  SEM<<t = t * f;>>
+  | '/' Fact<<out f>>  SEM<<t = t / f;>>
+  }.
+  
+Fact<<out int f>> =    LOCAL <<f = 0;>>
+    number<<out f>>
+  | '(' Expr<<out f>> ')'.
+
+\end{GenericCode}
+
+\section{ANTLR}
+
+In this section the parser generator ANTLR (ANother Tool for Language Recognition) is explained. First the history of ANLR will be explained, followed by the introduction of the parsing algorithm currently employed by ANTLR, namely ALL(*). Finally, the general functionality of ANTLR is highlighted.  
+
+\subsection{History}
+
+"ANTLR (ANother Tool for Language Recognition) is a powerful parser generator for reading, processing, executing, or translating structured text or binary files". As the acronym of ANTLR states, it is a tool for language recognition. ANTLR was first released in 1992 and has since then been in continuous development. The original creator and maintainer of the project is Terence Parr. ANTLR is written in Java and is open source under the BSD license. Its source code can be viewed on GitHub\footnote{https://github.com/antlr/antlr4}. 
+
+Many projects utilize ANTLR in their work. Notable examples include the Java Object-Relational Mapping tool \cite{HibernateWeb2024} and the NoSQL database Apache \textcite{Cassandra2024}.
+
+ANTLR originally started of as the master thesis of Terrence Parr \parencite{PCCTSHistory1994}. A first alpha release was created in 1990, that only generated LL(1) parsers. Version 1 of ANTLR incorporated the new parsing algorithm developed by Parr that allowed to create parsers for LL(k) grammars \parencite{parrPhd1993}. Version2 then provided incremental improvements.   
+
+Version 3, released in 2006 introduced a new parsing algorithm called LL(*) \parencite{LLSParsing2011}. The LL(*) parsing strategy performs parsing decisions at parse-time with a dynamic lookahead. The number of lookahead tokens increases to an arbitrary amount and falls back down using backtracking. However, a maximum amount of $k$ lookahead tokens still needed to be specified. Version 3 also introduced ANTLRWorks\footnote{https://www.antlr3.org/works}, a graphical IDE for the construction of ANTLR grammars.
+
+The current version 4, released in 2013 again introduced a new parsing algorithm adaptive-LL(*) or ALL(*). The most significant improvement of ALL(*) over LL(*) is that the number of lookahead tokens no longer need to be specified manually. ALL(*) will be explained in more detail in section \ref{sec:allstar}. ANTLR v4 added support for the visitor and listener patterns, enabling easier interaction with the parsed data. 
+
+\subsection{Parsing Algorithm Adaptive-LL(*)}
+\label{sec:allstar}
+
+The Adaptive-LL(*) or ALL(*) parsing strategy is introduced in the paper "Adaptive LL(*) parsing: the power of dynamic analysis" by \textcite{ALLParsing2014}. This parsing algorithm is the basis for ANTLR version 4. As the title suggests, ALL(*) performs the analysis of the grammar at runtime. 
+
+To understand the need for ALL(*) it is necessary to highlight why the previous strategy LL(*) is insufficient. 
+
+\subsection{Functionality}
+
