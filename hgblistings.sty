@@ -399,6 +399,28 @@ keepspaces=true,%
 {}
 
 
+\lstdefinelanguage{Antlr}{
+	basicstyle=\small\ttfamily\color{blue},%
+    breaklines=true,
+    moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},
+    moredelim=*[s][\color{black}\ttfamily]{options}{\}},
+    commentstyle={\color{gray}\itshape},
+    morecomment=[l]{//},
+    emph={STRING},
+    emphstyle={\color{blue}\ttfamily},
+    alsoletter={:,|,;},
+    morekeywords={:,|,;},
+    keywordstyle={\color{black}}, 
+}
+
+\lstnewenvironment{AntlrCode}[1][]
+{\lstset{%
+    language=Antlr,
+    escapeinside={/+}{+/},
+    #1}}%
+{}
+
+
 % Disable the lstlisting environment (due to popular abuse)
 \newcommand{\@WarnLstlisting}{
 \GenericError{}{Package hgblistings Error: The 'lstlisting' environment is disabled}%
