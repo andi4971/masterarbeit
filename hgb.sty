@@ -8,6 +8,8 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{hgb}[2021/06/24]%%AUTO
 \typeout{******************* hgb.sty  (options=\@nameuse{opt@hgb.sty}) ***********************}
+\RequirePackage[dvipsnames]{xcolor}
+
 \usepackage{svg}
 \usepackage[final]{pdfpages}
 \setboolean{@twoside}{false}
@@ -118,7 +120,6 @@
 \RequirePackage[percent]{overpic}	% to allow text/graphics overlays on pictures
 \RequirePackage{pict2e}				% extends the LaTeX 'picture' environment		
 
-\RequirePackage{xcolor}
 \newcommand{\@MissingArg}[1]{\textcolor{red}{#1}}
 
 \RequirePackage[T1,hyphens,obeyspaces,spaces,lowtilde]{url}
