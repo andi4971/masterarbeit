@@ -168,9 +168,11 @@ Continuing with the previous example, listing \ref{lst:ASTEx} shows the AST of t
 
 \subsection{Visitor-Pattern for Tree Transformation}
 
-In the case that a syntax/parse tree is already present, the visitor-pattern can be used to transform it into an AST. Using the visitor-pattern the syntax tree gets traversed and then step by step the AST is constructed. The visitor-pattern allows for the separation of algorithms from the objects they operate on. Instead of including the code for the generation of an AST object in the syntax tree object, a separate object, so-called \textit{visitor} is taking care of this. 
+In the case that a syntax/parse tree is already present, the visitor-pattern can be used to transform it into an AST. Using the visitor-pattern, the syntax tree gets traversed and then step by step the AST is constructed. The visitor-pattern allows for the separation of algorithms from the objects they operate on. Instead of including the code for the generation of an AST object in the syntax tree object, a separate object, a so-called \textit{visitor} is taking care of this. 
 
 To implement visitor-pattern for a syntax tree, the best approach is to use interfaces or abstract classes for the nodes of the syntax tree and the visitors. Listing \ref{lst:ListPatIntEx} shows a possible implementation for an interface and abstract class in Kotlin. This code is based on the syntax tree shown in listing \ref{lst:SyntaxTreeEx}. Each class of the syntax tree implements the \texttt{SyntaxTreeNode} abstract class. For the visitor class the \texttt{SyntaxTreeVisitor} interface needs to be implemented. Both classes are using generics. This allows the implementation of the visitor to use an arbitrary type as a return value. Multiple visitors can then be implemented using the generics, so that each visitor can return one type of the AST types. In this case it is helpful to create an abstract base visitor that provides an empty implementation for all interface's methods. Then the concrete visitor only needs to override the methods that are relevant for the specific AST type.  
+
+A \texttt{SyntaxTreeNode} can then be visited by calling its \texttt{accept} method. Inside the \texttt{accept} method, the appropriate method of the \texttt{SyntaxTreeVisitor} will be called. As can be seen in listing \ref{lst:ListPatNumbNode} the \texttt{NumberNode} calls the \texttt{visitNumberNode} with itself as the parameter. This behavior is analogous to all other nodes of the syntax tree. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Interface and abstract class used to implement the visitor-pattern., label=lst:ListPatIntEx]
@@ -185,4 +187,32 @@ interface SyntaxTreeVisitor<T> {
 \end{KotlinCode}
 
 
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{NumberNode} class inheriting from the \texttt{SyntaxTreeNode}., label=lst:ListPatNumbNode]
+  data class NumberNode(val value: Int) : SyntaxTreeNode() {
+    override fun <T> accept(visitor: SyntaxTreeVisitor<T>): <T> {
+        return visitor.visitNumberNode(this)
+    }
+}
+  \end{KotlinCode}
+
+
 \subsection{Listener-Pattern for Tree Transformation}
+
+The listener-pattern is used for \textit{listening} to events or notifications from another object. In the context of parsing, the listener-pattern is used to handle parse events coming from the parser. This includes events such as entering and exiting a node during the parse. When using the listener-pattern the parse tree is only traversed once. This is because the events get pushed to the listeners during the parse. 
+
+To implement the listener-pattern for the construction of an AST, a listener interface is needed. The listener interface contains methods declarations for entering and exiting each node type. The methods take the syntax tree node as the input parameter. A possible implementation for the listener interface is shown in.  In case of the \textit{enter} methods, the syntax tree node has not been parsed yet, so no data from it is available yet.
+
+A concrete listener will then implement the interface and register/subscribe itself to the events of the parser. When the parser enters or exits a node during parse it will call the respective method with the parsed syntax tree node for all listeners. 
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{ExpressionListener} interface., label=lst:ListPatExprList]
+interface ExpressionListener {
+    fun enterExpr(node: Expression)
+
+    fun exitExpr(node: Expression)
+
+    fun enterNumer(number: Number)
+
+    fun exitNumber(number: Number)
+}
+  \end{KotlinCode}
+
