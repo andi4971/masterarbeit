@@ -1,0 +1,37 @@
+\chapter{Java Virtual Machine (JVM)}
+
+This chapter focuses on the Java virtual machine (JVM). First the foundation and history of the JVM will be explained. Further focus is put on JVM itself and its functionality. In the following section the language of the JVM \textit{bytecode} is introduced. Finally, the bytecode manipulation tool ObjectWeb ASM is highlighted.
+
+\subsection{History}
+
+The following section is based on the specification of the JVM provided by \textcite{JVMHistoryOracle}. As the name suggests, the Java virtual machine (JVM) is the virtual machine used to execute java programs. In 1994 Sun Microsystems Inc. developed the JVM because of their requirement for Java to be platform and operating system independent. By using a virtual machine as an intermediary, Sun was able to move the multiplatform aspect away from the compiler. 
+
+One of the original use cases for Java and therefore the JVM was embedding of so-called applets in browsers. Applets were used in addition to the HTML document format, which at that time only provided limited functionality. Similar to HTML the applets were platform independent, which eased the development for the website creators. The first browser incorporating applets was HotJava. 
+
+Java was originally closed source, however in 2006 Sun Microsystems Inc. began work on open sourcing the Java compiler and the JVM under the OpenJDK project \parencite{SunOpenSourceJava}. On November 13, 2006 the JVM implementation developed by Sun called HotSpot was open sourced under the GPL license.
+
+The Version of the JVM specification is tied to the Java Version, but for the \texttt{class} files a separate version number so-called \textit{class file format version} is used. For the initial JDK release 1.0 the class file format version 45 was used. 
+
+Various companies and organizations provide implementations of the JVM. For example GraalVM is an implementation of the JVM with the ability to perform ahead-of-time (AOT) compilation for a java program. While this increases the performance of the application, it can only be executed on the platform it was compiled for. 
+%pico java
+
+
+
+
+
+
+%first third party ibm j9
+
+Instead of compiling a Java program to native machine code for a specific operating system and platform, the Java compiler produces so called \textit{bytecode} in the binary \texttt{class} file format. The JVM reads the class file and the instructions included in it. The bytecode instructions are then processed by the JVM and appropriate machine code is executed.  
+
+The JVM itself is only a specification of the machine that is used to execute the bytecode. How the specification is implemented is up to the developer of the implementation. The first prototype implementation of the JVM was on a handheld device similar to a Personal Digital Assistant. There have 
+
+
+In 2006 Sun began working on an open source implementation of the JVM 
+In 2010 Oracle Inc. purchased Sun Microsystems Inc. and subsequently started 
+%reference impl
+%graal
+% processor
+
+
+%classfile version

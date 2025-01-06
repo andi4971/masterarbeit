@@ -12,7 +12,7 @@ The type of attributes available depends on the parsing strategy. For a top-down
 
 Especially relevant are the attributes of terminal classes. Through the attribute of a terminal class like \texttt{number}, the actual number that this class node holds can be accessed. These kinds of attributes are provided by the lexical analyzer. 
 
-In listing \ref{lst:Coco2ATG} a simple attributed grammar in Coco-2 for arithmetic expressions is shown. This grammar uses semantic actions to calculate the result of an arithmetic expression. Semantic actions are encoded inside \texttt{<< >>} blocks. In this case C\verb|#| code. Synthesized attributes provide the results of the calculations from the child nodes. These attributes are available inside the semantic action where the actual calculation is performed. 
+In listing \ref{lst:Coco2ATG} a simple attributed grammar in Coco-2 for arithmetic expressions is shown. This grammar uses semantic actions to calculate the result of an arithmetic expression. Semantic actions are encoded inside \lstinline{<< >>} blocks; In this case C\verb|#| code. Synthesized attributes provide the results of the calculations from the child nodes. These attributes are available inside the semantic action where the actual calculation is performed. 
 
 While it is convenient to embed semantic actions directly into the grammar, it is not without disadvantages. By embedding code of a specific language, it is no longer possible to use the same grammar to generate a parser in another language. Parser generators like ANTLR provide multiple different target languages to generate a parser for. 
 
@@ -37,11 +37,11 @@ Fact<<out int f>> =    LOCAL <<f = 0;>>
 
 \section{ANTLR}
 
-In this section the parser generator ANTLR (ANother Tool for Language Recognition) is explained. First the history of ANLR will be explained, followed by the introduction of the parsing algorithm currently employed by ANTLR, namely ALL(*). Finally, the general functionality of ANTLR is highlighted.  
+In this section the parser generator ANTLR (ANother Tool for Language Recognition) is explained. First a general overview of the history of ANTLR is given, followed by the introduction of the parsing algorithm currently employed by ANTLR, namely ALL(*). Finally, the general functionality of ANTLR is explained.  
 
 \subsection{History}
 
-"ANTLR (ANother Tool for Language Recognition) is a powerful parser generator for reading, processing, executing, or translating structured text or binary files". As the acronym of ANTLR states, it is a tool for language recognition. ANTLR was first released in 1992 and has since then been in continuous development. The original creator and maintainer of the project is Terence Parr. ANTLR is written in Java and is open source under the BSD license. Its source code can be viewed on GitHub\footnote{https://github.com/antlr/antlr4}. 
+"ANTLR (ANother Tool for Language Recognition) is a powerful parser generator for reading, processing, executing, or translating structured text or binary files". As the acronym of ANTLR states, it is a tool for language recognition. ANTLR was first released in 1992 and has since then been in continuous development. The original creator and maintainer of the project is Terence Parr. ANTLR is written in Java and is open sourced under the BSD license. Its source code can be viewed on GitHub\footnote{https://github.com/antlr/antlr4}. 
 
 Many projects utilize ANTLR in their work. Notable examples include the Java Object-Relational Mapping tool \cite{HibernateWeb2024} and the NoSQL database Apache \textcite{Cassandra2024}.
 
@@ -49,7 +49,7 @@ ANTLR originally started of as the master thesis of Terrence Parr \parencite{PCC
 
 Version 3, released in 2006 introduced a new parsing algorithm called LL(*) \parencite{LLSParsing2011}. The LL(*) parsing strategy performs parsing decisions at parse-time with a dynamic lookahead. The number of lookahead tokens increases to an arbitrary amount and falls back down using backtracking. However, a maximum amount of $k$ lookahead tokens still needed to be specified. Version 3 also introduced ANTLRWorks\footnote{https://www.antlr3.org/works}, a graphical IDE for the construction of ANTLR grammars.
 
-The current version 4, released in 2013 again introduced a new parsing algorithm adaptive-LL(*) or ALL(*). The most significant improvement of ALL(*) over LL(*) is that the number of lookahead tokens no longer need to be specified manually. ALL(*) will be explained in more detail in section \ref{sec:allstar}. ANTLR v4 added support for the visitor and listener patterns, enabling easier interaction with the parsed data. 
+The current version 4, released in 2013 again introduced a new parsing algorithm adaptive-LL(*) or ALL(*). The most significant improvement of ALL(*) over LL(*) is that the number of lookahead tokens no longer need to be specified manually. ANTLR v4 added support for the visitor and listener patterns, enabling easier interaction with the parsed data. 
 
 \subsection{Parsing Algorithm Adaptive-LL(*)}
 \label{sec:allstar}
@@ -58,13 +58,13 @@ The Adaptive-LL(*) or ALL(*) parsing strategy is introduced in the paper "Adapti
 
 \subsubsection{Limitations of LL(*) Parsing Algorithm}
 
-To understand the need for ALL(*) it is necessary to highlight why the previous strategy LL(*) is insufficient. LL(*), introduced by \textcite{parr2011ll}, was developed as an improvement to the existing GLL \parencite{GLL2010} and GLR \parencite{tomita1991generalized} parsers.  For ambiguous grammars these parsers return multiple parse trees, which are undesired for parsers of programming languages. This is due to them being designed for natural languages, which are inherently ambiguous. LL(*) overcomes these limitations by using regular expressions that are stored inside a deterministic finite automaton (DFA) to offer mostly deterministic parsing. Using the DFA allows for regular lookahead even though the grammar itself is context-free. 
+To understand the need for ALL(*) it is necessary to highlight why the previous strategy LL(*) is insufficient. LL(*), introduced by \textcite{parr2011ll}, was developed as an improvement to the existing GLL \parencite{GLL2010} and GLR \parencite{tomita1991generalized} parsers.  For ambiguous grammars these parsers return multiple parse trees, which are undesirable for parsers of programming languages. This is due to them being designed for natural languages, which are inherently ambiguous. LL(*) overcomes these limitations by using regular expressions that are stored inside a deterministic finite automaton (DFA) to offer mostly deterministic parsing. Using the DFA allows for regular lookahead even though the grammar itself is context-free. 
 
 However, the LL(*) grammar condition cannot be checked statically, leading to the case that sometimes no regular expression is found that distinguishes the possible productions. Such situations are detected by the static analysis and then backtracking is used instead. Backtracking however comes with the disadvantage that for rules in the format $A \rightarrow a | ab$, the second alternative will never be matched, since backtracking always chooses the first alternative. 
 
 \subsubsection{Dynamic Grammar Analysis with ALL(*)}
 
-With ANTLR version 4 the parsing strategy Adaptive-LL(*) or ALL(*) was introduced. The main difference to ANTLR version 3 is that the grammar analysis is now performed at parse-time, and is no longer static. This overcomes the limitations of the static analysis LL(*) performs and enables the generation of correct parsers context-free grammars. The only exception are grammars that contain indirect or hidden left-recursion\footnote{Indirect left-recursion is a rule like $A \rightarrow B, B \rightarrow A$. $\epsilon$ productions cause hidden left-recursion. Take a rule $B \rightarrow \epsilon$ that produces only the empty chain $\epsilon$ and another rule $A \rightarrow BA$. Since B's only production is to $\epsilon$ the second rule causes a left-recursion. }. From an engineering perspective this was seen to be too much effort, since these grammars are deemed to be not common. Direct left-recursion is possible, because ANTLR rewrites the grammar to be non-direct left-recursive before passing it to the ALL(*) parsing algorithm. 
+With ANTLR version 4 the parsing strategy Adaptive-LL(*) or ALL(*) was introduced. The main difference to ANTLR version 3 is that the grammar analysis is now performed at parse-time, and is no longer static. This overcomes the limitations of the static analysis LL(*) performs and enables the generation of correct parsers for context-free grammars. The only exception are grammars that contain indirect or hidden left-recursion\footnote{Indirect left-recursion is a rule like $A \rightarrow B, B \rightarrow A$. $\epsilon$ productions cause hidden left-recursion. Take a rule $B \rightarrow \epsilon$ that produces only the empty chain $\epsilon$ and another rule $A \rightarrow BA$. Since B's only production is to $\epsilon$ the second rule causes a left-recursion. }. From an engineering perspective this was seen to be too much effort, since these grammars are deemed to be not common. Direct left-recursion is possible, because ANTLR rewrites the grammar to be non-direct left-recursive before passing it to the ALL(*) parsing algorithm. 
 
 At a decision point(a rule containing multiple alternatives), ALL(*) starts a subparser for each alternative in pseudo-parallel. A subparser tries to match the remaining input to the selected alternative. If the input does not match, the subparser dies off. All subparsers process one symbol at the time in pseudo-parallel. This guarantees that the correct alternative can be found with minimum lookahead. In the case of ambiguity due to multiple subparsers reaching the end of file or coalescing, the first alternative will be chosen. 
 
@@ -77,7 +77,7 @@ The theoretical runtime complexity of ALL(*) is $O(n^4)$. This stems from the fa
 
 \subsection{Functionality}
 
-ANTLR generates a combined lexer and parser from a single grammar file. The generated parser is a recursive descent parser. ANTLR supports various target/host languages such as Java, C\verb|#| or C++. The syntax used by the ANTLR grammar is similar to \textit{yacc} and supports extended BNF (EBNF) operators such as \texttt{?}. To interact with the generated parser ANTLR optionally generates interfaces and implementations for the listener and visitor pattern. The usage of these patterns is explained in section XXX and XXX respectively.
+ANTLR generates a combined lexer and parser from a single grammar file. The generated parser is a recursive descent parser. ANTLR supports various target/host languages such as Java, C\verb|#| or C++. The syntax used by the ANTLR grammar is similar to \textit{yacc} and supports extended BNF (EBNF) operators such as \texttt{?}. To interact with the generated parser ANTLR optionally generates interfaces and implementations for the listener and visitor pattern.
 
 ANTLR does not have a separate lexical analysis phase. Instead lexical and syntactical analysis are integrated into a unified process. Lexical rules are treated as parser rules, therefore a separate lexical analysis phase is not needed. Since the phases are combined, it is possible for ANTLR to perform context-sensitive lexing. The lexer can make a decision based on the current parsing context. The parsing is directly performed on the raw input stream and not on a separate token stream. 
 
@@ -94,7 +94,7 @@ In ANTLR grammars semantic actions can be defined. Semantic actions can be inser
 
 % semantic actions
 
-\begin{GenericCode}[float,numbers=none,caption=Example grammar using a semantic predicate and a semantic action., label=lst:ANTLRSemPred]
+\begin{AntlrCode}[float,numbers=none,caption=Example grammar using a semantic predicate and a semantic action., label=lst:ANTLRSemPred]
 grammar Example;
 @members {
     java.util.Stack<String> blockStack = new java.util.Stack<>();
@@ -117,21 +117,21 @@ otherStatement: 'print' IDENTIFIER;
 IDENTIFIER: [a-zA-Z_][a-zA-Z_0-9]*;
 
 WS  : [ \t\r\n]+ -> skip;
-\end{GenericCode}
+\end{AntlrCode}
 
 
 \subsubsection{Alternative Labels for Rule Alternatives}
 
 Per default ANTLR generates one method for each rule. In the case of multiple alternatives for a rule, the handling of the alternatives would need to be done manually. Therefore, ANTLR offers the possibility to attach a label to each of the alternatives. Then a method for each alternative will be generated separately. One use case is highlighted in listing \ref{lst:ANTLRRuleAlt}. The rule \texttt{type} matches to either one of the four types. Each alternative has a label associated to it by using \verb|#| as the prefix for the alternative name. With this four methods will be generating corresponding to each of the alternatives.     
 
-\begin{GenericCode}[float,numbers=none,caption=Example rule using alternative labels for the rule alternatives., label=lst:ANTLRRuleAlt]
+\begin{AntlrCode}[float,numbers=none,caption=Example rule using alternative labels for the rule alternatives., label=lst:ANTLRRuleAlt]
   type
       : 'int'     #IntType
       | 'bool'    #BoolType
       | 'long'    #LongType
       | 'string'  #StringType
       ;
-  \end{GenericCode}
+  \end{AntlrCode}
 
 \section{Syntax Tree and Abstract Syntax Tree (AST)}
 
@@ -168,7 +168,7 @@ Continuing with the previous example, listing \ref{lst:ASTEx} shows the AST of t
 
 \subsection{Visitor-Pattern for Tree Transformation}
 
-In the case that a syntax/parse tree is already present, the visitor-pattern can be used to transform it into an AST. Using the visitor-pattern, the syntax tree gets traversed and then step by step the AST is constructed. The visitor-pattern allows for the separation of algorithms from the objects they operate on. Instead of including the code for the generation of an AST object in the syntax tree object, a separate object, a so-called \textit{visitor} is taking care of this. 
+In the case that a syntax/parse tree is already present, the visitor-pattern can be used to transform the syntax tree into an AST. Using the visitor-pattern, the syntax tree gets traversed and then step by step the AST is constructed. The visitor-pattern allows for the separation of algorithms from the objects they operate on. Instead of including the code for the generation of an AST object in the syntax tree object, a separate object, a so-called \textit{visitor} is taking care of this. 
 
 To implement visitor-pattern for a syntax tree, the best approach is to use interfaces or abstract classes for the nodes of the syntax tree and the visitors. Listing \ref{lst:ListPatIntEx} shows a possible implementation for an interface and abstract class in Kotlin. This code is based on the syntax tree shown in listing \ref{lst:SyntaxTreeEx}. Each class of the syntax tree implements the \texttt{SyntaxTreeNode} abstract class. For the visitor class the \texttt{SyntaxTreeVisitor} interface needs to be implemented. Both classes are using generics. This allows the implementation of the visitor to use an arbitrary type as a return value. Multiple visitors can then be implemented using the generics, so that each visitor can return one type of the AST types. In this case it is helpful to create an abstract base visitor that provides an empty implementation for all interface's methods. Then the concrete visitor only needs to override the methods that are relevant for the specific AST type.  
 
@@ -200,7 +200,7 @@ interface SyntaxTreeVisitor<T> {
 
 The listener-pattern is used for \textit{listening} to events or notifications from another object. In the context of parsing, the listener-pattern is used to handle parse events coming from the parser. This includes events such as entering and exiting a node during the parse. When using the listener-pattern the parse tree is only traversed once. This is because the events get pushed to the listeners during the parse. 
 
-To implement the listener-pattern for the construction of an AST, a listener interface is needed. The listener interface contains methods declarations for entering and exiting each node type. The methods take the syntax tree node as the input parameter. A possible implementation for the listener interface is shown in.  In case of the \textit{enter} methods, the syntax tree node has not been parsed yet, so no data from it is available yet.
+To implement the listener-pattern for the construction of an AST, a listener interface is needed. The listener interface contains method declarations for entering and exiting each node type. The methods take the syntax tree node as the input parameter. A possible implementation for the listener interface is shown in.  In case of the \textit{enter} methods, the syntax tree node has not been parsed yet, so no data from it is available yet.
 
 A concrete listener will then implement the interface and register/subscribe itself to the events of the parser. When the parser enters or exits a node during parse it will call the respective method with the parsed syntax tree node for all listeners. 
 

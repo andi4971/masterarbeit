@@ -400,13 +400,13 @@ keepspaces=true,%
 
 
 \lstdefinelanguage{Antlr}{
-	basicstyle=\small\ttfamily\color{blue},%
+	basicstyle=\small\ttfamily\color{NavyBlue},%
     breaklines=true,
     moredelim=[s][\color{green!50!black}\ttfamily]{'}{'},
     moredelim=*[s][\color{black}\ttfamily]{options}{\}},
     commentstyle={\color{gray}\itshape},
     morecomment=[l]{//},
-    emph={STRING},
+    emph={IDENTIFIER, WS},
     emphstyle={\color{blue}\ttfamily},
     alsoletter={:,|,;},
     morekeywords={:,|,;},
@@ -444,6 +444,7 @@ keepspaces=true,%
     escapeinside={/+}{+/},
     #1}}%
 {}
+
 
 
 % Disable the lstlisting environment (due to popular abuse)
