@@ -15,12 +15,12 @@ The Version of the JVM specification is tied to the Java Version, but for the \t
 Various companies and organizations provide implementations of the JVM. For example GraalVM is an implementation of the JVM with the ability to perform ahead-of-time (AOT) compilation for a Java program. While this increases the performance of the application, it can only be executed on the platform it was compiled for. Another example is picoJava, which is a processor specification with the goal of enabling native execution of bytecode for embedded systems \parencite{PicoJava}. \textcite{PicoJavaFPGA} presented an implementation of picoJava on an FPGA.
 %pico java
 
-\section{Functionality}
+
+
+
+\section{Architecture}
 
 The basic task of the JVM is to read a \texttt{class} file and execute the bytecode instructions contained in it. The specification defines only the abstract machine. How the bytecode is executed on the actual physical processor, or what optimizations are to be performed, is up to the implementer of the JVM specification. An official reference implementation of the JVM called OpenJDK\footnote{https://openjdk.org/} is provided by Oracle. 
-
-\subsection{Architecture}
-
 The JVM architecture can be seen in figure \ref{fig:JVMArchitecture}. It consists of the following elements: 
 
 \begin{itemize}
@@ -37,7 +37,36 @@ The JVM architecture can be seen in figure \ref{fig:JVMArchitecture}. It consist
     \label{fig:JVMArchitecture}
 \end{figure}
 
-\subsubsection{Class Loader}
+\subsection{\texttt{class} File Format}
+
+A \texttt{class} file contains the necessary information that is needed to execute a program on the JVM. One \texttt{class} file contains the definition of either a single class, interface or module. A \texttt{class} file is structured as follows: 
+
+\begin{itemize}
+    \item Magic Number
+    \item Version Info
+    \item Constant Pool
+    \item Access Flags
+    \item This Class
+    \item Super Class
+    \item Interfaces
+    \item Fields
+    \item Methods
+    \item Attributes
+\end{itemize}
+
+At the beginning of the \texttt{class} file is the magic number. It is responsible for identifying a \texttt{class} file. The magic number is the same for every \texttt{class} file. Next is the version of the \texttt{class} file format. The JVM uses the version to determine if the \texttt{class} file is compatible with it.
+
+The \textit{constant pool} acts as a storage for all constants and symbolic references contained in the file. For example the reference to a method or a string literal. An entry in the constant pool consists of a tag which specifies one of 17 constant types, followed by information describing the constant. Depending on the type, the length of the constant may change. A string literal for example would require more memory than an integer. 
+
+The \textit{access flag} entry is a flag mask that defines the permissions and properties of the class or interface. Possible flags include for example, whether the class is \texttt{public, final, abstract} or not. 
+
+The \textit{this class} entry contains the name of the current class in the form of an index to an entry in the constant pool. Analogous the \textit{super class} entry defines the name of the superclass of this class. In case that the class does not inherit from a superclass, the index is zero. The following section lists all implemented interfaces, again as a list of indexes in the constant pool. 
+
+In the \textit{fields} section all member fields of the class are listed. Each field description consists of four elements: Access flags, similar to the class level access flags, e.g., \texttt{public, private}. An index to the name of the field in the constant pool. An index to the descriptor (type specification) of the field in the constant pool. Finally, the entry can have optional attributes associated with it, e.g., the constant value (for static fields). An entry in the \textit{methods} section contains the same values, only the descriptor is used to describe the method signature (parameter and return type).
+
+Finally, in the \textit{attributes} section, additional metadata of the class is stored. Most importantly, this section contains the bytecode for each method of the class. Other information includes for example, a list of exceptions thrown by each method, the name of the source file or a mapping from bytecode instructions to source code line numbers.
+
+\subsection{Class Loader}
 
 The class loader takes care of loading bytecode into the JVM memory. There are three tiers of class loaders:
 
@@ -55,24 +84,11 @@ In the second stage linking is performed. This stage is separated into the three
 
 If linking has been successful the class or interface is initialized. Explicit initializer of static fields are executed as are static initializer blocks of the class or interface.
 
+\subsection{Runtime Data Areas}
 
+The runtime data areas of the JVM are regions of memory used during the execution of a program. Each memory area serves a specific use case. Some memory areas are specific to a thread. They get created when a thread is created and cleaned up on thread termination. Others are alive for the entire duration of the JVM's runtime.  
 
-%The JVM specification describes the structure and functionality of the JVM in the following areas:
-
-
-
-%\begin{itemize}
-%    \item \texttt{class} File Format
-%    \item Data Types
-%    \item Runtime Data Areas
-%    \item Method Frames
-%    \item Arithmetic Operations
-%    \item Special Methods
-%    \item Exceptions
-%    \item Instruction Set
-%    \item Support for Class Library
-%\end{itemize}
-
+\subsubsection{Method Area}
 
 
 
