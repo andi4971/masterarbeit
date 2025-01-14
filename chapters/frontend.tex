@@ -4,7 +4,7 @@ In this chapter  methods and tools for the construction of compiler frontends ar
 
 \section{Attributed Grammars}
 
-Parser generators like ANTLR or Coco-2 require the definition of the grammar of the source language in a specific format. These formats also allow for the declaration of attributes and semantic actions in the grammar. Semantic actions have access to the attributes of symbols (terminal and non-terminal) of a rule. The combination of a grammar, attributes and semantic actions is called an attributed grammar.  
+Parser generators like ANTLR or Coco-2 require the definition of the grammar of the source language in a specific format. These formats also allow for the declaration of attributes and semantic actions in the grammar. Semantic actions have access to the attributes of symbols (terminal and non-terminal) of a rule. Some symbols have attributes associated with them. The combination of a grammar, attributes and semantic actions is called an attributed grammar.  
 
 
 There are two types of attributes: inherited and synthesized attributes. The former ones are computed based on the attributes of the parent node. Synthesized attributes are based on the attributes of the children nodes.  
@@ -49,7 +49,7 @@ ANTLR originally started of as the master thesis of Terrence Parr \parencite{PCC
 
 Version 3, released in 2006 introduced a new parsing algorithm called LL(*) \parencite{LLSParsing2011}. The LL(*) parsing strategy performs parsing decisions at parse-time with a dynamic lookahead. The number of lookahead tokens increases to an arbitrary amount and decreases again using backtracking. However, the maximum amount of $k$ lookahead tokens still needs to be specified. Version 3 also introduced ANTLRWorks\footnote{https://www.antlr3.org/works}, a graphical IDE for the construction of ANTLR grammars.
 
-The current version 4, released in 2013 again introduced a new parsing algorithm adaptive-LL(*) or ALL(*). The most significant improvement of ALL(*) over LL(*) is that the maximum number of lookahead tokens no longer needs to be specified. ANTLR v4 added support for the visitor and listener patterns, enabling easier interaction with the syntax tree. 
+The current version 4, released in 2013 again introduced a new parsing algorithm adaptive-LL(*) or ALL(*). The most significant improvement of ALL(*) over LL(*) is that the maximum number of lookahead tokens no longer needs to be specified. ANTLR v4 added support for the visitor and listener patterns\footnote{https://github.com/antlr/antlr4/blob/dev/doc/listeners.md}, enabling easier interaction with the syntax tree. 
 
 \subsection{Parsing Algorithm Adaptive-LL(*)}
 \label{sec:allstar}
@@ -64,7 +64,7 @@ However, the LL(*) grammar condition cannot be checked statically, leading to th
 
 \subsubsection{Dynamic Grammar Analysis with ALL(*)}
 
-With ANTLR version 4 the parsing strategy Adaptive-LL(*) or ALL(*) was introduced. The main difference to ANTLR version 3 is that the grammar analysis is now performed at parse-time, and is no longer static. This overcomes the limitations of the static analysis LL(*) performs and enables the generation of correct parsers for context-free grammars. The only exception are grammars that contain indirect or hidden left-recursion\footnote{Indirect left-recursion is a rule like $A \rightarrow B, B \rightarrow A$. $\epsilon$ productions cause hidden left-recursion. Take a rule $B \rightarrow \epsilon$ that produces only the empty chain $\epsilon$ and another rule $A \rightarrow BA$. Since B's only production is to $\epsilon$ the second rule causes a left-recursion. }. From an engineering perspective it was seen to be too much effort, since these grammars are deemed to be not common. Direct left-recursion is possible, because ANTLR rewrites the grammar to be non-direct left-recursive before passing it to the ALL(*) parsing algorithm. 
+With ANTLR version 4 the parsing strategy Adaptive-LL(*) or ALL(*) was introduced. The main difference to ANTLR version 3 is that the grammar analysis is now performed at parse-time, and is no longer static. This overcomes the limitations of the static analysis LL(*) performs and enables the generation of correct parsers for context-free grammars. The only exception are grammars that contain indirect or hidden left-recursion\footnote{Indirect left-recursion is a rule like $A \rightarrow Bx, B \rightarrow Ay$. $\epsilon$ productions cause hidden left-recursion. Take a rule $B \rightarrow \epsilon$ that produces only the empty chain $\epsilon$ and another rule $A \rightarrow BA$. Since B's only production is to $\epsilon$ the second rule causes a left-recursion. }. From an engineering perspective it was seen to be too much effort, since these grammars are deemed to be not common. Direct left-recursion is possible, because ANTLR rewrites the grammar to be non-direct left-recursive before passing it to the ALL(*) parsing algorithm. 
 
 At a decision point (a rule containing multiple alternatives), ALL(*) starts a subparser for each alternative in pseudo-parallel. A subparser tries to match the remaining input to the selected alternative. If the input does not match, the subparser dies off. All subparsers process one symbol at the time in pseudo-parallel. This guarantees that the correct alternative can be found with minimum lookahead. In the case of ambiguity due to multiple subparsers reaching the end of file or coalescing, the first alternative will be chosen. 
 
@@ -77,7 +77,7 @@ The theoretical runtime complexity of ALL(*) is $O(n^4)$. This stems from the fa
 
 \subsection{Functionality}
 
-ANTLR generates a combined lexer and parser from a single grammar file. The generated parser is a recursive descent parser. ANTLR supports various implementation languages such as Java, C\verb|#| or C++. The syntax used by the ANTLR grammar is similar to \textit{yacc} and supports extended BNF (EBNF) operators such as \texttt{?}. To interact with the generated parser, ANTLR optionally generates interfaces and implementations for the listener and visitor pattern.
+ANTLR generates a combined lexer and parser from a single grammar file. The generated parser is a recursive descent parser. ANTLR supports various implementation languages such as Java, C\verb|#| or C++. The syntax used by the ANTLR grammar supports extended BNF (EBNF) operators such as \texttt{?}. To interact with the generated parser, ANTLR optionally generates interfaces and implementations for the listener and visitor pattern.
 
 ALL(*) does not use a separate lexical analysis phase. Instead lexical and syntactical analysis are integrated into a unified process. Lexical rules are treated as parser rules, therefore a separate lexical analysis phase is not needed. Since the phases are combined, it is possible for ALL(*) to perform context-sensitive lexing. The lexer can make a decision based on the current parsing context. The parsing is directly performed on the raw input stream and not on a separate token stream. 
 
@@ -122,7 +122,7 @@ WS  : [ \t\r\n]+ -> skip;
 
 \subsubsection{Alternative Labels for Rule Alternatives}
 
-Per default ANTLR generates one method for each rule. In the case of multiple alternatives for a rule, the handling of the alternatives would need to be done manually. Therefore, ANTLR offers the possibility to attach a label to each of the alternatives. Then a method for each alternative will be generated separately. One use case is highlighted in listing \ref{lst:ANTLRRuleAlt}. The rule \texttt{type} matches to either one of the four types. Each alternative has a label associated to it by using \verb|#| as the prefix for the alternative name. With this definition four methods will be generated corresponding to each of the alternatives.     
+Per default ANTLR generates one method for each rule. In the case of multiple alternatives for a rule, the handling of the alternatives would need to be done manually. Therefore, ANTLR offers the possibility to attach a label to each of the alternatives. Then a method for each alternative will be generated separately. One use case is highlighted in listing \ref{lst:ANTLRRuleAlt}. The rule \texttt{type} matches to either one of the four types. Each alternative has a label associated to it by using \verb|#| as the prefix for the alternative name. With this definition four methods will be generated corresponding to each of the alternatives as explained above.     
 
 \begin{AntlrCode}[float,numbers=none,caption=Example rule using alternative labels for the rule alternatives., label=lst:ANTLRRuleAlt]
   type
