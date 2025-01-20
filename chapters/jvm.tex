@@ -88,15 +88,34 @@ If linking has been successful the class or interface is initialized. Explicit i
 
 The runtime data areas of the JVM are regions of memory used during the execution of a program. Each memory area serves a specific use case. Some memory areas are specific to a thread. They get created when a thread is created and cleaned up on thread termination. Others are alive for the entire duration of the JVM's runtime.  
 
+\subsubsection{PC Register}
+
+The \texttt{program counter} or PC register is the memory area which contains the bytecode instruction that is currently being executed. Each thread inside the JVM has its own PC register. In the case that a native method is executed, the PC register's value is undefined.
+
+\subsubsection{JVM Stacks}
+
+A JVM Stack is a thread-specific memory area that is created in tandem with the thread. A stack in the JVM is similar to a stack in languages such as C. An instance of a stack stores \textit{frames} for method-calls. On method invocation a new frame is created. Conversely, when the method invocation is finished, the frame is destroyed. 
+
+A frame contains information related to a single method invocation. This includes the following:
+
+\begin{itemize}
+    \item Local variables and method parameters
+    \item Operand stack
+    \item Reference to constant pool of the method's class
+    \item Return address 
+\end{itemize}
+
+The operand stack is used for intermediate calculations and storing results from other method invocations. The reference to the constant pool is needed to resolve the targets for method calls and field accesses. The return address stores the address of the calling method. Once the method invocation has completed control will be returned to this address.
+
+\subsubsection{Heap}
+
+In the \textit{heap} all object instances and arrays are stored. The heap is shared across all threads and is created on JVM startup. Contrary to programming languages like C, it is not possible in the JVM to manually reclaim/free the memory allocated by an object or array. Instead, the JVM utilizes an automatic storage management system known as a \textit{garbage collector}. The garbage collector automatically reclaims memory from objects and arrays that are no longer referenced by any other object or variable in the program. The JVM specification does not require a specific garbage collector algorithm, rather the implementer can choose which algorithm to use or also allow the user to select the algorithm. While the garbage collector automatically reclaims memory, it is also possible to manually request a cleanup through an API. There is however no requirement for the garbage collector to honor this request, so it may be ignored. 
+
 \subsubsection{Method Area}
 
+The method area is a section of the memory that is available to all threads inside the JVM and is created on JVM startup. It stores metadata of the classes loaded into the JVM. This includes the runtime constant pool, field and method data and the bytecode for methods and constructors.
 
+\subsubsection{Native Method Stacks}
 
-
-
-
-%The JVM only understands bytecode, but not Java source code. Other programming languages also target the JVM for execution. For example the programming   
-
-%first third party ibm j9
-
-%Instead of compiling a Java program to native machine code for a specific operating system and platform, the Java compiler produces so called \textit{bytecode} in the binary \texttt{class} file format. The JVM reads the class file and the instructions included in it. The bytecode instructions are then processed by the JVM and appropriate machine code is executed.  
+Similar to JVM stacks \textit{native method} stacks are associated with a method invocation and store information relevant to that invocation. However, in this case the invoked method is executed natively on the host system. Instead of bytecode, native code, written in e.g. C, is executed. The native method stack serves as an interface between the native code and the bytecode inside the JVM.  
+  
