@@ -119,3 +119,16 @@ The method area is a section of the memory that is available to all threads insi
 
 Similar to JVM stacks \textit{native method} stacks are associated with a method invocation and store information relevant to that invocation. However, in this case the invoked method is executed natively on the host system. Instead of bytecode, native code, written in e.g. C, is executed. The native method stack serves as an interface between the native code and the bytecode inside the JVM.  
   
+\subsection{Execution Engine}
+
+The JVM's execution engine is responsible for executing the bytecode contained in the loaded \texttt{class} files. It takes bytecode instructions and transforms them into something the host system can execute. This may be through interpretation or just-in-time (JIT) compilation. The JVM specification does not specify how the bytecode is executed on the host system. Therefore, in this section the execution engine \textit{HotSpot} of the JVM reference implementation \textcite{OpenJDKHotspotRuntime} is explained.
+
+The HotSpot execution engine consists of two main parts: The interpreter and the JIT-Compiler. For memory management the execution engine is supported by the garbage collector, that automatically reclaims memory from unused objects and arrays. The native method interface (JNI) enables the JVM to call and execute code and libraries written in other languages like C or C\verb|++|.
+
+\subsubsection{Interpreter}
+
+The interpreter reads bytecode instructions sequentially and translates them to target code the host system can execute. This allows the JVM to start executing bytecode right away, without having to wait for any JIT compilation to be performed. In comparison, .NETs' Common Language Runtime (CLR) performs a JIT compilation of a methods' code as soon as it is first invoked\parencite{MicrosoftCILToNative}. 
+
+HotSpot uses a template-based interpreter. On JVM startup HotSpot creates an interpreter based on the data in the so called \texttt{TemplateTable}. The \texttt{TemplateTable} contains information on the assembly code corresponding to each bytecode instruction. A template in this case is a description of a bytecode. The generated templates are specific to the host operating system and architecture. The interpreter fetches the template corresponding to the current bytecode instruction and executes it. The template is fetched by using an accessor function provided by the \texttt{TemplateTable}. This approach leads to higher performance than using a switch-statement, which may have to compare the current instruction with all cases to find the correct code to execute. A downside of this approach is the need for extra platform and operating system specific code needed for the dynamic code generation. 
+
+Initially all code on the JVM is interpreted.  
