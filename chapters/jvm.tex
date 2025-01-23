@@ -147,7 +147,16 @@ When a method that was compiled with C1 passes an execution threshold, the C2 co
 
 \subsubsection{Java Native Interface (JNI)}
 
-The Java Native Interface (JNI) is an API that enables the code executed inside the JVM to interoperate with applications and libraries that are written in other languages. This API is necessary because there are cases when the entirety of the application cannot be implemented inside the JVM. For example there might be libraries only available in C/C++, but not for the JVM. The JNI then allows calling those libraries from within the JVM. 
+
+\begin{JavaCode}[float,numbers=none,caption=Declaration of a native method in Java., label=lst:JNINativeMethod]
+    public class Example {
+        public native void nativeMethod();
+    }
+\end{JavaCode}
+
+
+The Java Native Interface (JNI) is an API that enables the code executed inside the JVM to interoperate with applications and libraries that are written in other languages. This API is necessary because there are cases when the entirety of the application cannot be implemented inside the JVM. For example there might be libraries only available in C/C++, but not for the JVM. The JNI then allows calling those libraries from within the JVM. Listing \ref{lst:JNINativeMethod} shows the declaration of a native method in Java. The \texttt{native} keyword signalizes to the JVM that the implementation of the method will be provided in native code.
+
 
 The JNI makes it possible to create, inspect and update JVM objects. For that the JNI provides a type mapping between the JVM types and native equivalents. Further, methods located inside the JVM can be called or exceptions thrown from within native code.
 
