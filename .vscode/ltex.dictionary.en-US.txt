@@ -7,3 +7,4 @@ subparser
 subparsers
 lexing
 bytecode
+inlining
