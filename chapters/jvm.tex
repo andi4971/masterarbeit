@@ -161,3 +161,40 @@ The Java Native Interface (JNI) is an API that enables the code executed inside 
 The JNI makes it possible to create, inspect and update JVM objects. For that the JNI provides a type mapping between the JVM types and native equivalents. Further, methods located inside the JVM can be called or exceptions thrown from within native code.
 
 Using the JNI inside an application however limits the number of systems it can be executed on. The native part of the application needs to be compiled for every architecture and operating system the application is intended to run on. Native methods manually manage the memory they have allocated and therefore programming errors can lead to memory leaks within the application.  
+
+\section{Bytecode}
+
+Bytecode is the instruction set of the JVM. It serves as an intermediate language between high level languages such as Java or Kotlin, and low level languages such as assembly which can be natively executed on a CPU. High level languages only need to target bytecode to be cross-platform. As long as a JVM implementation is present for a given architecture and operating system, the bytecode can be executed without needing to be compiled again. 
+
+\subsection{Structure}
+
+In terms of code execution JVM is organized as a stack machine with registers. Each method being executed is structured as a frame containing an operand stack and local variables, which can be seen as registers. The operand stack and number of variables inside a frame are each able to contain up to 65535 entries.
+
+A bytecode instruction is structured as a one byte long opcode followed by zero or more one byte long operands. The maximum possible number of opcodes is therefore 256. Most of them are in use, while some are reserved for internal and future use. Each instruction has a mnemonic associated with it. Instructions that can operate on multiple types are prefixed by the concrete type they are operating on. For example the instruction for adding together two integers is known by the mnemonic \texttt{iadd}. The following types are supported in bytecode:
+
+\begin{itemize}
+    \item \texttt{boolean}
+    \item \texttt{byte}
+    \item \texttt{char}
+    \item \texttt{short}
+    \item \texttt{int}
+    \item \texttt{float}
+    \item \texttt{reference}
+    \item \texttt{returnAddress}
+    \item \texttt{long}
+    \item \texttt{double}
+\end{itemize}
+
+Most instructions for the types \texttt{byte}, \texttt{char} and \texttt{short} and all for \texttt{boolean} are internally converted to \texttt{int}, therefore in these cases the \texttt{int} based instructions are used instead.
+
+The \texttt{reference} type is analogous to pointer types in languages like C. It is type-safe and managed by the JVM. The JVM also keeps track of the references for garbage collection purposes. If there are no references anymore pointing to an object, the garbage collector can reclaim the memory it occupied. The \texttt{returnAddress} type represents pointers to opcodes of JVM instructions. This type is only used internally and is not accessible otherwise.
+
+
+\subsection{Categories of Instructions}
+
+The instructions in the bytecode instruction set can be categorized depending on their functionality. Instructions from each category work together to perform more complex actions. 
+
+\subsubsection{Load and Store Instructions}
+
+
+\subsection{Sample program}
