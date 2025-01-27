@@ -196,5 +196,22 @@ The instructions in the bytecode instruction set can be categorized depending on
 
 \subsubsection{Load and Store Instructions}
 
+Load and store instructions allow the loading of values onto the operand stack and storing values from it into variables. These instructions function within the frame of a method. Load instructions like \texttt{iload} or \texttt{aload} load an integer or array respectively onto the operand stack. To load a constant onto the operand stack instructions like \texttt{bipush} and \texttt{ldc} can be used. \texttt{ldc} loads a constant from the constant pool of the class while \texttt{bipush} takes one operand (the constant value), that is loaded onto the operand stack. When a value from the operand stack is to be stored into a variable instructions like \texttt{istore} or \texttt{astore} are available. 
+
+\subsubsection{Arithmetic Instructions}
+
+Arithmetic instructions perform calculations using the values on the operand stack. The result of the calculation is then put on the operand stack. There are separate instructions for integer and floating point calculations, e.g. \texttt{iadd} and \texttt{fadd} for integer and floating point additions respectively. In the case of an over or underflow no exception is thrown. The bytecode instruction set further includes instructions for bitwise logical operations like AND (\texttt{iand}). 
+
+\subsubsection{Type Conversion Instructions}
+
+Type conversion instructions make it possible to change the type of a numeric value. They can be used to perform an explicit conversion. The JVM supports widening conversions (e.g. from \texttt{int} to \texttt{long}; \texttt{i2l}) and narrowing conversions (e.g. from \texttt{float} to \texttt{int}; \texttt{f2i}). For some conversions there may be a loss of information. Widening conversions like from \texttt{int} to \texttt{float} can lose some of the least significant bits of the source value. 
+
+\subsubsection{Object related Instructions}
+
+The bytecode instruction set contains separate instructions for class instances and arrays, even though they are both considered as objects by the JVM. To create a class instance the instruction \texttt{new} is used, while for an array \texttt{newarray} is used. To access class fields the \texttt{getfield} instruction can be used for instance variables and \texttt{getstatic} for class variables. When loading an entry from an array there is a separate instruction for each type, e.g. \texttt{iaload} for loading an integer from an array. For storing a value inside a class instance or array analogous instructions are available. 
+
+\subsubsection{Operand Stack Management Instructions}
+
+In some cases it is beneficial to perform manipulations on the operand stack directly. For example to implement peephole optimization, it is necessary to duplicate a value on the operand stack as an alternative to loading a variable two times\parencite{mckeeman1965peephole}. The instruction for that is \texttt{dup}. The instruction set further provides instructions like \texttt{pop} or \texttt{swap}. 
 
 \subsection{Sample program}
