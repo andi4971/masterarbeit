@@ -214,4 +214,18 @@ The bytecode instruction set contains separate instructions for class instances 
 
 In some cases it is beneficial to perform manipulations on the operand stack directly. For example to implement peephole optimization, it is necessary to duplicate a value on the operand stack as an alternative to loading a variable two times\parencite{mckeeman1965peephole}. The instruction for that is \texttt{dup}. The instruction set further provides instructions like \texttt{pop} or \texttt{swap}. 
 
+\subsubsection{Control Transfer Instructions}
+
+By using control transfer instructions, the execution path can be changed to continue with an instruction other than the one after the control transfer instruction. Labels are used to specify where the execution should continue. There are three kinds of control transfer instructions available:
+
+\begin{itemize}
+    \item \textbf{Conditional Branch}: If a condition is met, the execution jumps to the instruction specified by a label. The label is provided as an operand to the conditional instruction. If the condition is not met, the following instruction is executed. For example, the instruction \texttt{ifnull} checks whether a value on the operand stack equals null or not.
+    \item \textbf{Compound Conditional Branch}: The instructions \texttt{tableswitch} and \break \texttt{lookupswitch} allow for multi-way branching, which are available as \texttt{switch} statements in Java. Depending on the case values on of those two instructions is used. \texttt{tableswitch} is optimized for dense case values, while \texttt{lookupswitch} is preferred for sparse ones.
+    \item \textbf{Unconditional Branch}: Instructions like \texttt{goto} are used to jump to a label that may be before or after the instruction itself. 
+\end{itemize}
+
+\subsubsection{Method Invocation and Return Instructions}
+
+For method invocation, the instruction set offers different instructions based on the type of method that should be invoked. For example, for regular instance methods the \texttt{invokevirtual} instruction can be used. Return instructions of methods are distinguished by their type. Each instruction is prefixed by its type, e.g. for \texttt{int} it is \texttt{ireturn}. In the case of a \texttt{void} return type the instruction is \texttt{return}. 
+
 \subsection{Sample program}
