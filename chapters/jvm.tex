@@ -228,4 +228,72 @@ By using control transfer instructions, the execution path can be changed to con
 
 For method invocation, the instruction set offers different instructions based on the type of method that should be invoked. For example, for regular instance methods the \texttt{invokevirtual} instruction can be used. Return instructions of methods are distinguished by their type. Each instruction is prefixed by its type, e.g. for \texttt{int} it is \texttt{ireturn}. In the case of a \texttt{void} return type the instruction is \texttt{return}. 
 
+\subsubsection{Exception Throwing}
+
+The JVM supports programmatically raising exceptions and thus returning control to the caller of the method to deal with the exception. In the bytecode instruction set this is realized by the \texttt{athrow} instruction.  
+
 \subsection{Sample program}
+
+To illustrate the functionality of bytecode and how computations on the operand stack work the following example is shown: Listing \ref{lst:JavaNumberAdd} show the Java code for the instantiation of two variables \texttt{a} and \texttt{b},  followed by the instantiation of a third variable \texttt{c} which is initialized with the sum of \texttt{a} and \texttt{b}.
+
+Compiling this small Java program, leads to the bytecode shown in listing \ref{lst:JavaNumberAddBytecode}. To instantiate the integer variable \texttt{a} with the value 6, the value must first be pushed onto the operand stack. This is done via the \texttt{bipush} instruction with the value as the operand. Bytecode indexes local variables starting with zero. The first index is used for the args parameter. Therefore, variable \texttt{a} uses index 1. The instruction \verb|istore_1| pops the top value from the operand stack and stores it in the local variable with index 1. For variable \texttt{b} the process is analogous, but using index 2. To store the sum of the first two variable into variable \verb|c| the addition must first be performed. Using the \verb|iload| instruction, both values are put onto the operand stack. The \verb|iadd| instruction then pops the top two entries from the operand stack and pushes the sum of the addition onto it. The sum is then stored in variable \verb|c| with index 3. Finally, the \texttt{return} instruction completes the execution of this method.  
+
+\begin{JavaCode}[float,numbers=none,caption=Instantiation of two variables and a third one with the sum of the first two variables in Java., label=lst:JavaNumberAdd]
+public static void main(String[] args) {
+    int a = 6;
+    int b = 10;
+    int c = a + b;
+}
+\end{JavaCode}
+
+\begin{Bytecode}[float,numbers=none,caption=Bytecode of the Java program shown in listing \ref{lst:JavaNumberAdd}., label=lst:JavaNumberAddBytecode]
+    0: bipush        6
+    2: istore_1
+    3: bipush        10
+    5: istore_2
+    6: iload_1
+    7: iload_2
+    8: iadd
+    9: istore_3
+   10: return
+\end{Bytecode}
+
+\section{ObjectWeb ASM}
+
+The basis for the following section is the official Website of the ObjectWeb ASM project \parencite{ASMWeb2024}. ASM is a Java-based framework for interacting with Java Bytecode. ASM can be used to inspect, manipulate and generate bytecode. ASM was first released in 2000 by Eric Bruneton. At that time, ASM included just a code generator. Since 2002 the project is open source and the source code can be viewed on the project's gitlab\footnote{https://gitlab.ow2.org/asm/asm} instance. 
+
+ASM is used in various projects to take care of the bytecode interaction. For example, the OpenJDK uses ASM to generate lambda call sites \cite{OpenJdk2024}. ASM is also used in in compilers that produce Java bytecode like the Kotlin compiler \cite{Kotlin2024}. 
+
+ASM offers a visitor-pattern based API for generating bytecode. There is also the possibility to construct an explicit tree via the Tree API. The Tree API is however just a wrapper around the already existing visitor-pattern. The visitor-pattern offers the advantage of not having to construct an explicit tree, which makes writing code to generate the bytecode more flexible. ASM operates directly on the bytecode which enables its efficiency.     
+
+\subsection{Functionality}
+
+ASM's visitor-pattern based API can be used to read, manipulate and create bytecode. The API offers four main classes that work together to enable this functionality: \texttt{ClassReader}, \texttt{ClassWriter}, \texttt{ClassVisitor} and \texttt{MethodVisitor}. 
+
+\subsubsection{ClassReader}
+
+The task of the ClassReader is to read and parse a \texttt{class} file, either from an input stream or directly from a byte array. The ClassReader extracts relevant information like the class name, implemented interfaces and methods. To interface with the parsed data, the ClassReader uses the visitor-pattern and accepts a \texttt{ClassVisitor}. 
+
+\subsubsection{ClassVisitor}
+
+The ClassVisitor makes it possible to inspect and manipulate a class. The ClassVisitor itself is an abstract class that provides abstract methods for visiting all structural elements of a class like fields or methods. For more complex structures like fields, an auxiliary visitor class is used. For example, when visiting an annotation the ClassVisitor's \texttt{visitAnnotation} method returns an \texttt{AnnotationVisitor}. This again abstract visitor class then provides methods for visiting all structures contained in an annotation like it's name. 
+
+\subsubsection{MethodVisitor}
+
+The MethodVisitor enables the inspection and manipulation of class methods. This is the visitor responsible for actually interfacing and modifying the bytecode of a method. The MethodVisitor is not an abstract class, in contrast to the ClassVisitor. Depending on the type of bytecode instruction, different visitor methods are available. For instructions like \texttt{istore} the visitor method \texttt{visitVarInsn} is used. When programmatically adding bytecode instructions to a method, the appropriate method of the visitor needs to be invoked. Listing \ref{lst:JavaNumberAddASM} shows the ASM code for the bytecode generation representing the Java code shown in listing \ref{lst:JavaNumberAdd}. The \texttt{mv} field represents the MethodVisitor instance used for invoking the visitor methods.
+
+\begin{JavaCode}[float,numbers=none,caption=ASM code for bytecode generation of the Java program shown in listing \ref{lst:JavaNumberAdd}., label=lst:JavaNumberAddASM]
+mv.visitIntInsn(Opcodes.BIPUSH, 6);
+mv.visitVarInsn(Opcodes.ISTORE, 1); 
+
+mv.visitIntInsn(Opcodes.BIPUSH, 10);
+mv.visitVarInsn(Opcodes.ISTORE, 2); 
+
+
+mv.visitVarInsn(Opcodes.ILOAD, 1); 
+mv.visitVarInsn(Opcodes.ILOAD, 2); 
+mv.visitInsn(Opcodes.IADD);        
+mv.visitVarInsn(Opcodes.ISTORE, 3);
+
+mv.visitInsn(Opcodes.RETURN);
+\end{JavaCode}
