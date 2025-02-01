@@ -1,0 +1,54 @@
+\chapter{Implementation Frontend}
+
+This chapter explains the implementation of the frontend of the compiler. First the additional technologies that are used in the development of the frontend are listed. Then the AST and symboltable are explained. In the following section the ANTLR grammar is shown. Based on this grammar three implementations for the AST transformation are explained: Visitor-pattern, listener-pattern and via an attributed grammar. 
+
+\section{Used Technologies}
+
+In this section the additional technologies used for the development of the frontend are explained. This includes chosen the programming language and the additional libraries used.
+
+\subsection{Kotlin}
+
+For the implementation the programming language Kotlin is chosen. Kotlin can be compiled to bytecode, which makes it possible to use Java libraries in Kotlin code. Kotlin has advantages over Java in some aspects. For example, null safety\footnote{https://kotlinlang.org/docs/null-safety.html} is implemented into the language via explicit nullability within it's type system. This requires the caller of a field to explicitly handle nullable fields and thus reduces the risk of a null reference exception. 
+
+\subsection{AspectJ}
+
+The compiler frontend utilizes AspectJ in it's handling of semantic errors. AspectJ is a library that enables aspect oriented programming in Java. Aspect oriented programming makes it possible to handle cross-cutting concerns in a central place without having to modify code in other areas. It can be used for compile time and runtime weaving of cross-cutting concerns. In the compiler frontend, runtime weaving using annotations is used.  
+
+\subsection{ANTLR Preview Plugin}
+
+During development with the JetBrains IntelliJ IDE, the ANTLR preview plugin\footnote{https://plugins.jetbrains.com/plugin/7358-antlr-v4} is used. The plugin developed by the ANTLR creator Terrance Parr, offers various features that enhance the process of creating and working with ANTLR. When developing an ANTLR grammar, syntax highlighting and checking for syntactic and semantic errors is provided. The included navigation window inside the IDE further enables testing of the grammar, without having to generate the combined lexer and parser manually first. To generate the combined lexer and parser the plugin includes a tool window which includes common configuration settings.
+
+\section{ANTLR Grammar}
+
+The ANTLR grammar is based on the MiniC++ grammar in EBNF-form. This grammar is transformed into the ANTLR grammar syntax. ANTLR grammars are stored inside \texttt{.g4} files. Each rule inside the grammar is delimited by a semicolon. 
+
+\subsection{Header Section}
+
+At the top of the grammar file, the name of the grammar is specified. In this case \texttt{minicpp}. In this section options can also be specified, like the implementation language of the lexer and parser or the package/namespace of the generated code. These and other options can also be specified via command line options during the generation. In this case the necessary options are specified in the tool window of the ANTLR preview plugin. 
+
+%if in need add picture of tool window
+
+\subsection{Root}
+
+The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. 
+
+
+\begin{AntlrCode}[float,numbers=none,caption=Top rules of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTop]
+    miniCpp:     (miniCppEntry)* EOF;
+    miniCppEntry:     constDef
+                    | varDef
+                    | funcDecl
+                    | funcDef
+                    | SEM
+                    ;
+\end{AntlrCode}
+
+
+
+\subsection{Variables and Constants}
+
+\subsection{Function Declaration and Implementation}
+
+\subsection{Statements}
+
+\subsection{Expressions}
