@@ -28,26 +28,67 @@ At the top of the grammar file, the name of the grammar is specified. In this ca
 
 %if in need add picture of tool window
 
+\subsection{Terminal Classes and Comments}
+
+The grammar contains three terminal classes shown in listing \ref{lst:ANTLRMiniCppTermClass}. The \texttt{IDENT} terminal class is used for all identifiers and requires them to start with a letter followed by an arbitrary number of letters and digits. For integer number the \texttt{INT} terminal class specifies a sequence of one or more digits. Signs are handled in the parser rules. Strings are defined as a sequence of characters starting and ending with double quotes. All characters except the special characters for line end are allowed. The comment and whitespace handling is performed by the \texttt{WS}, \verb|LINE_COMMENT| and \verb|BLOCK_COMMENT| lexical rules. These are special rules that when matched tell the parser to skip them and therefore not include them in the syntax tree. 
+
+\begin{AntlrCode}[float,numbers=none,caption=Terminal classes of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTermClass]
+IDENT:          [a-zA-Z_][a-zA-Z_0-9]*;
+INT:            [0-9]+;
+STRING:         '"' (~[\r\n"] | '""')* '"';
+WS:             [ \t\n\r]+ -> skip;
+LINE_COMMENT:   '//' ~[\r\n]* -> skip;
+BLOCK_COMMENT:  '/*' .*? '*/' -> skip;
+\end{AntlrCode}
+
+
 \subsection{Root}
 
-The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. 
-
+The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. The root rule \texttt{miniCpp} contains zero or more elements of the rule \texttt{miniCppEntry} followed by the lexical rule \texttt{EOF}. \texttt{EOF} is a default lexical rule provided by ANTLR signaling the end of the file. \texttt{miniCppEntry} defines the elements that can be used at the top level of the miniC\verb|++| source file. These are variable and constant definitions and function declarations and definitions. \texttt{SEM} is the lexical rule defining a semicolon. 
 
 \begin{AntlrCode}[float,numbers=none,caption=Top rules of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTop]
-    miniCpp:     (miniCppEntry)* EOF;
-    miniCppEntry:     constDef
-                    | varDef
-                    | funcDecl
-                    | funcDef
-                    | SEM
-                    ;
+miniCpp:     (miniCppEntry)* EOF;
+miniCppEntry:     constDef
+                | varDef
+                | funcDecl
+                | funcDef
+                | SEM
+                ;
 \end{AntlrCode}
 
 
 
 \subsection{Variables and Constants}
 
+Listing \ref{lst:ANTLRMiniCppVarConstDef} shows the parser rules variable and constant definitions. Both definitions can have multiple entries, which are separated by a comma. In the case of a constant definition entry, the initialization value is required. For a variable this is optional. The \texttt{STAR} optional lexical rule classifies a field as an array if present. The \texttt{initOption} parser rule consists of three production alternatives specifying the possible initialization values. 
+
+\begin{AntlrCode}[float,numbers=none,caption=Variable and constant defintions of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppVarConstDef]
+constDef:        CONST type constDefEntry (COMMA constDefEntry)* SEM ;
+constDefEntry:   IDENT init ;
+
+varDef:          type varDefEntry (COMMA varDefEntry)* SEM ;
+varDefEntry:     STAR? IDENT (init)? ;
+
+init:            EQUAL  initOption ;
+initOption:      BOOLEAN      #BooleanInit
+               | NULLPTR      #NullptrInit
+               | (SIGN)? INT  #IntInit
+               ;
+\end{AntlrCode}
+
 \subsection{Function Declaration and Implementation}
+
+\begin{AntlrCode}[float,numbers=none,caption=Function declaration and defintion of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppFuncDeclDef]
+funcDecl:         funcHead SEM;
+funcDef:          funcHead block;
+funcHead:         type STAR? IDENT LPAREN formParList? RPAREN;
+formParList:      (VOID
+                  |     formParListEntry
+                   (COMMA formParListEntry)*
+                  );
+formParListEntry: type STAR? IDENT (BRACKETS)?;
+\end{AntlrCode}
+
 
 \subsection{Statements}
 
