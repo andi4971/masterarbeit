@@ -76,20 +76,96 @@ initOption:      BOOLEAN      #BooleanInit
                ;
 \end{AntlrCode}
 
-\subsection{Function Declaration and Implementation}
+\subsection{Function Declaration and Definition}
+
+The rules for a function declaration and definition are shown in listing \ref{lst:ANTLRMiniCppFuncDeclDef}. In MiniC\verb|++| to call a function there must be at least a declaration of the function further ahead in the source code. Function declarations and definitions both start with the function head that consists of the return type, identifier and an optional parameter list. In the case of a function definition, the function head is followed the \texttt{block} rule, which contains the method's body. 
+
+The parameter list can consist either of a single entry, the \texttt{void} type, or of one or more actual input parameters. Each parameter specified by the \texttt{formParListEntry} rule, consists of a type, an optional star and brackets indicating an array followed by the identifier of the parameter.
+
 
 \begin{AntlrCode}[float,numbers=none,caption=Function declaration and defintion of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppFuncDeclDef]
 funcDecl:         funcHead SEM;
 funcDef:          funcHead block;
 funcHead:         type STAR? IDENT LPAREN formParList? RPAREN;
-formParList:      (VOID
-                  |     formParListEntry
-                   (COMMA formParListEntry)*
+formParList:      (     VOID
+                  |     formParListEntry (COMMA formParListEntry)*
                   );
 formParListEntry: type STAR? IDENT (BRACKETS)?;
 \end{AntlrCode}
 
-
 \subsection{Statements}
 
+The parser rule defining a statement is shown in listing \ref{lst:ANTLRMiniCppStatAlt}. The statement rules serves as a container for all concrete statement types. For example, the \texttt{ifStat} rule can be seen in listing \ref{lst:ANTLRMiniCppStatIf}. It consists of the \texttt{if} keyword followed by the condition in parentheses and a statement which should be executed if the condition is met. Optionally an else statement can be specified. This rule does not suffer from the \textit{dangling else} problem. In such cases ANTLR resolves the ambiguity by always choosing the first successful production. 
+
+\begin{AntlrCode}[float,numbers=none,caption=Statement rule and it's production alternatives of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppStatAlt]
+stat:  ( emptyStat  | breakStat
+       | blockStat  | exprStat
+       | ifStat     | whileStat
+       | inputStat  | outputStat
+       | deleteStat | returnStat
+       );
+\end{AntlrCode}
+
+\begin{AntlrCode}[float,numbers=none,caption=If Statement rule  of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppStatIf]
+ifStat:      'if' LPAREN expr RPAREN stat elseStat?;
+elseStat:    'else' stat;
+\end{AntlrCode}
+
+
+
 \subsection{Expressions}
+
+Part of the grammar for expressions is shown in listing \ref{lst:ANTLRMiniCppExprBool}. At the top of every expression is an \texttt{orExpr} followed by zero or more \texttt{exprEntry} elements. In case an \texttt{exprEntry} is present, the expression performs one or mor assignments. Each \texttt{exprEntry} consists of an assignment operator signalizing the type of assignment, and an \texttt{orExpr} that provides the value to be assigned. The \verb|orExpr| and \verb|andExpr| rules implement their respective boolean operators. The \verb|relExpr| rule consists of a \verb|simpleExpr| and zero or more \verb|relExprEntry| elements. The \verb|relExprEntry| rule handles relative expressions with the \verb|relExprOperator| rule, which contains the relative operators like greater or less than. The \verb|simpleExpr| rule begins with an optional sign that is relevant for integer values, followed by a term and zero or more \verb|simpleExprEntry| elements. The \verb|simpleExprEntry| rule consists of a sign followed by a term. The precedence rules for arithmetic operations are realized inside the grammar.
+
+
+
+\begin{AntlrCode}[float,numbers=none,caption=Expression rules for assignment and boolean operations of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppExprBool]
+expr:                 orExpr (exprEntry)*;
+exprEntry:            exprAssign orExpr;
+exprAssign:           EQUAL      #EqualAssign
+                    | ADD_ASSIGN #AddAssign
+                    | SUB_ASSIGN #SubAssign
+                    | MUL_ASSIGN #MulAssign
+                    | DIV_ASSIGN #DivAssign
+                    | MOD_ASSIGN #ModAssign
+                    ;
+orExpr:             andExpr ( '||' andExpr )*;
+andExpr:            relExpr ( '&&' relExpr )*;
+relExpr:            simpleExpr
+                    ( relExprEntry )*;
+relExprEntry:       relOperator simpleExpr;
+simpleExpr:         (SIGN)?
+                    term ( simpleExprEntry )*;
+simpleExprEntry:    SIGN term;
+\end{AntlrCode}
+
+The rules for terms and factors are shown in listing \ref{lst:ANTLRMiniCppExprTermFact}. A term consists of a fact, which contains an optional negation making it a \verb|notFact|, followed by zero or more \verb|termEntry| elements. The \verb|termEntry| rule realizes multiplication, division and modulo operations via the \verb|termOperator| rule. The \verb|fact| rule contains six possible productions. Three types of value literals can be used as a factor: integer, boolean or null-pointer. Another option is the array initialization, defined by the \verb|#NewArrayFact| alternative. The \verb|#ExprFact| alternative allows for precedence using an expression contained in parentheses. To read the value of a variable or array, or call a function the \verb|#CallFact| alternative using the \verb|callFactEntry| rule is used. The \verb|callFactEntry| rule contains an optional increment/decrement at the beginning and end of the rule. Each \verb|INC_DEC| element has a named alias so that in the syntax tree it can be easily checked which element is null. Via the \verb|IDENT| terminal class the name of the variable or array to read can be specified. If \verb|callFactEntryOperation| is not null, then either a function call or array access is performed. Depending on the type of function that is called, parameters may be necessary. The \verb|#ActParListFactOperation| alternative allows for parameters via the optional \verb|actParList| rule. This rule consists of one or more expressions, that make up the parameters.     
+
+\begin{AntlrCode}[float,numbers=none,caption=Expression rules for terms and factors of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppExprTermFact]
+term:             notFact (termEntry)*;
+termEntry:        termOperator notFact;
+termOperator:     STAR #StarOperator
+                | DIV #DivOperator
+                | MOD #ModOperator;
+notFact:          NOT? fact;
+fact:             BOOLEAN #BooleanFact
+                | NULLPTR #NullptrFact
+                | INT     #IntFact
+                | callFactEntry         #CallFact
+                | NEW type LBRACK expr RBRACK #NewArrayFact
+                | LPAREN expr RPAREN          #ExprFact
+                ;
+callFactEntry:    preIncDec=INC_DEC?
+                  IDENT
+                  callFactEntryOperation?
+                  postIncDec=INC_DEC?
+                  ;
+callFactEntryOperation:
+      ( LBRACK expr    RBRACK)          #ExprFactOperation
+    | ( LPAREN (actParList)?    RPAREN) #ActParListFactOperation
+    ;
+actParList:       expr (COMMA expr)*;
+\end{AntlrCode}
+
+\section{Abstract Syntax Tree (AST)}
+
