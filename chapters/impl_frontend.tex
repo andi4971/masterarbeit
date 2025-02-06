@@ -169,3 +169,9 @@ actParList:       expr (COMMA expr)*;
 
 \section{Abstract Syntax Tree (AST)}
 
+The syntax tree created by ANTLR contains information that is not necessary for the later stages of the compiler. For this reason an abstract syntax tree (AST) is generated from the syntax tree. 
+
+For the implementation of the AST nodes Kotlin \textit{data classes} are used primarily. A Kotlin \texttt{data class} provides implementations for common methods like \texttt{equals} and \verb|hashCode|. The method implementations are generated from the primary constructor of the data class. For leaf nodes which always contain the same information, e.g. the \verb|VOID| of the \verb|formParList| rule, Kotlin's \verb|data object| construct is used.
+
+
+%context objects
