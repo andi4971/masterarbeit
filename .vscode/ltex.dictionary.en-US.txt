@@ -9,3 +9,5 @@ lexing
 bytecode
 inlining
 nullability
+Symboltable
+symboltable

@@ -1,2 +1,3 @@
 {"rule":"POSSESSIVE_APOSTROPHE","sentence":"^\\QMost instructions for the types byte, char and short and all for boolean are internally converted to int, therefore in these cases the int based instructions are used instead.\\E$"}
 {"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QANTLR grammars are stored inside .g4 files.\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QBesides the AST a symboltable is needed to\\E$"}
