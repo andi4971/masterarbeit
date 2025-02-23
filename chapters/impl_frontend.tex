@@ -227,28 +227,89 @@ class Variable(
 \end{KotlinCode}
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{getNextAvailableIndex} method., label=lst:ScopeVariableIndex]
-       private fun getNextAvailableIndex(static: Boolean): Int {
-              if (static) return -1
-              
-              val nonStaticVars = variables.filterNot { it.static }
-              return if (nonStaticVars.isEmpty()) {
-                  parent?.getNextAvailableIndex(static) ?: 0
-              } else {
-                  nonStaticVars.maxOf { it.index } + 1
-              }
-          }
+private fun getNextAvailableIndex(static: Boolean): Int {
+       if (static) return -1
+       
+       val nonStaticVars = variables.filterNot { it.static }
+       return if (nonStaticVars.isEmpty()) {
+           parent?.getNextAvailableIndex(static) ?: 0
+       } else {
+           nonStaticVars.maxOf { it.index } + 1
+       }
+}
 \end{KotlinCode}
 
 \subsection{Function}
 
-Information about a function is managed in the \verb|Function| class shown in listing \ref{lst:ScopeFunction}. A function is identified by its signature: a combination of the identifier and the formal parameter list. MiniC\verb|++| allows to split the declaration and definition of a function. The \verb|isDefined| flag keeps track of the definition status of a function.
+Information about a function is managed in the \verb|Function| class shown in listing \ref{lst:ScopeFunction}. A function is identified by its signature: a combination of the identifier and the formal parameter list. MiniC\verb|++| allows the declaration and definition of a function to be specified separately. The \verb|isDefined| flag keeps track of the definition status of a function. This field is further used in a later stage when semantic checks are performed.  
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{Function} class., label=lst:ScopeFunction]
-       data class Function(
-              val ident: Ident,
-              val returnType: ExprType,
-              val formParTypes: List<ExprType>,
-              var isDefined: Boolean = false
-          )
+data class Function(
+       val ident: Ident,
+       val returnType: ExprType,
+       val formParTypes: List<ExprType>,
+       var isDefined: Boolean = false
+)
 \end{KotlinCode}
+
+\section{Visitor-Implementation}
+
+The visitor-implementation works by traversing the generated syntax tree. When generating the ANTLR combined lexer and parser a visitor interface and base class are generated. The interface \verb|minicppVisitor| is implemented by the \verb|minicppBaseVisitor| base class. This base class contains empty implementations for all \verb|visit| methods of the interface. This allows the developer to only override the methods that are actually needed. The interface is also generic, enabling different return types for the visitor methods based on the specific requirements. 
+
+This implementation creates a concrete visitor class for every type     of the AST. The class extends the \verb|mincCppBaseVisitor| and overrides only the methods relevant for that AST type. The visitor implementation for the \verb|MiniCpp| AST type is shown in listing \ref{lst:VisitorMniCpp}. The AST type serves as the generic type of the base visitor. The \verb|visitMiniCpp| method then returns this type. The input parameter of the method is an instance of the \verb|MiniCppContext| class, which is the syntax tree node representing the \verb|MiniCpp| rule. From this object the relevant information for the AST node is extracted. In this case it contains a list of \verb|miniCppEntry|. Each entry in the list is processed by the \verb|MiniCppEntryVisitor| visitor. The \verb|MiniCppEntryVisitor| overrides all methods for the \verb|varDef|, \verb|funcDecl|, \verb|funcDef| and \verb|SEM| rules. The return type of all methods is the interface \verb|MiniCppEntry|. The root node of the AST is made up of these entries plus the current scope called \verb|globalScope| since it is the parent of all other scopes. The scope instance is passed on to the \verb|MiniCppEntryVisitor| so that for example variable definitions can be added to it.
+
+Named alternatives in the grammar as shown in \ref{lst:ANTLRMiniCppExprBool} for the \verb|termOperator| rule generate the following code seen in listing \ref{lst:VisitorTermOpVis}. The \verb|TermOperatorVisitor| class contains a method for each alternative, eliminating the need to perform not null checks on each symbol to figure out which alternative was produced. For more complex rule alternatives as seen in the \verb|callFactEntryOperation| rule, all symbols belonging to an alternative are grouped inside a context object with the same name as the alternative.
+
+The code shown in listing \ref{lst:VisitorExec} produces an AST using the visitor-pattern. The instantiation of the character stream followed by the lexer, token stream and parser is the same for all implementations. The syntax tree is generated by calling the \verb|parser.miniCpp()| method. The syntax tree is then passed into the \verb|visit| method of the \verb|MiniCppVisitor| who initiates the generation of the AST.
+
+
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{MiniCppVisitor} class., label=lst:VisitorMniCpp]
+class MiniCppVisitor(private val className: String) : minicppBaseVisitor<MiniCpp>() 
+{
+    override fun visitMiniCpp(ctx: minicppParser.MiniCppContext): MiniCpp {
+        val scope = Scope(null)
+        val entries = ctx.miniCppEntry().map { it.accept(MiniCppEntryVisitor(scope)) }
+        return MiniCpp(
+            globalScope = scope,
+            entries = entries,
+            className = className
+        )
+    }
+}
+\end{KotlinCode}
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{TermOperatorVisitor} class., label=lst:VisitorTermOpVis]
+class TermOperatorVisitor : minicppBaseVisitor<TermOperator>() {
+    override fun visitStarOperator(ctx: minicppParser.StarOperatorContext): TermOperator {
+        return MUL
+    }
+
+    override fun visitDivOperator(ctx: minicppParser.DivOperatorContext): TermOperator {
+        return DIV
+    }
+
+    override fun visitModOperator(ctx: minicppParser.ModOperatorContext): TermOperator {
+        return MOD
+    }
+}
+\end{KotlinCode}
+
+\begin{KotlinCode}[float,numbers=none,caption=Code for the generation of the AST using the visitor-pattern., label=lst:VisitorExec]
+fun generateASTForFileVisitor(inputStream: InputStream, className: String): MiniCpp 
+{
+    val charStream = CharStreams.fromStream(inputStream)
+    val lexer = minicppLexer(charStream)
+    val tokenStream = BufferedTokenStream(lexer)
+    val parser = minicppParser(tokenStream)
+    return MiniCppVisitor(className).visit(parser.miniCpp())
+}
+\end{KotlinCode}
+
+
+
+
+
