@@ -327,9 +327,9 @@ class MiniCppListener(
     override fun exitMiniCpp(ctx: minicppParser.MiniCppContext) {
         result = MiniCpp(className, 
                          scopeHandler.getScope(), 
-                         entryListener.getAllEntries())
+                         entryListener.getAllEntries()
+                         )
     }
-    
 }
 \end{KotlinCode}
 
@@ -373,3 +373,34 @@ The code for adding a block entry to the stack is shown in \ref{lst:ListenerBloc
         blockEntries.add(entry)
     }
 \end{KotlinCode}
+
+For the management of variables and functions the \verb|Scope| class is used, same as in the visitor-based implementation. For the communication between listeners the \verb|ScopeHandler| class is used. The code of this class is shown in listing \ref{lst:ListenerScopeHandler}. Fundamentally, the \verb|ScopeHandler| manages a stack of \verb|Scope| instances. The \verb|init| block instantiates the root scope. The \verb|pushChildScope| method instantiates a new child scope and puts it onto the stack. Whenever a variable or function needs to be added, the current scope can be retrieved via the \verb|getScope| method. The \verb|ScopeHandler| instance is the same over the entire AST generation. All listeners that need to interact with the scope have access to the same instance. 
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{ScopeHandler} class., label=lst:ListenerScopeHandler]
+class ScopeHandler {
+
+    private val scopes = mutableListOf<Scope>()
+
+    init {
+        scopes.add(Scope(null))
+    }
+
+    fun getScope(): Scope {
+        return scopes.last()
+    }
+
+    fun popScope() {
+        scopes.removeLast()
+    }
+
+    fun pushChildScope() {
+        scopes.add(Scope(getScope()))
+    }
+}
+\end{KotlinCode}
+
+The execution process is similar to the visitor-implementation shown in listing \ref{lst:VisitorExec}. First all the listener instances are created. Depending on the listener it's constructor may contain one or more references to other listeners from where AST nodes can be retrieved. In some cases the relation between the listeners is too complex to be able to pass all the required listeners as constructor parameters. For such cases a separate \verb|initialize| method is used which supplies the required listeners. The \verb|minicppParser| then provides a method to register listeners. Every listener is registered to the parser using this method. The \verb|miniCpp| method of the parser then starts the parsing process. Once this method has finished executing, the generated AST can be retrieved from the \verb|result| variable of the \verb|MiniCppListener|.
+
+\section{ATG-Implementation}
+
