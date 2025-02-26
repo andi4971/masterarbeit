@@ -19,6 +19,7 @@ The compiler frontend utilizes AspectJ in it's handling of semantic errors. Aspe
 During development with the JetBrains IntelliJ IDE, the ANTLR preview plugin\footnote{https://plugins.jetbrains.com/plugin/7358-antlr-v4} is used. The plugin developed by the ANTLR creator Terrance Parr, offers various features that enhance the process of creating and working with ANTLR. When developing an ANTLR grammar, syntax highlighting and checking for syntactic and semantic errors is provided. The included navigation window inside the IDE further enables testing of the grammar, without having to generate the combined lexer and parser manually first. To generate the combined lexer and parser the plugin includes a tool window which includes common configuration settings.
 
 \section{ANTLR Grammar}
+\label{cha:ANTLRGrammar}
 
 The ANTLR grammar is based on the MiniC++ grammar in EBNF-form. This grammar is transformed into the ANTLR grammar syntax. ANTLR grammars are stored inside \texttt{.g4} files. Each rule inside the grammar is delimited by a semicolon. 
 
@@ -403,4 +404,74 @@ class ScopeHandler {
 The execution process is similar to the visitor-implementation shown in listing \ref{lst:VisitorExec}. First all the listener instances are created. Depending on the listener it's constructor may contain one or more references to other listeners from where AST nodes can be retrieved. In some cases the relation between the listeners is too complex to be able to pass all the required listeners as constructor parameters. For such cases a separate \verb|initialize| method is used which supplies the required listeners. The \verb|minicppParser| then provides a method to register listeners. Every listener is registered to the parser using this method. The \verb|miniCpp| method of the parser then starts the parsing process. Once this method has finished executing, the generated AST can be retrieved from the \verb|result| variable of the \verb|MiniCppListener|.
 
 \section{ATG-Implementation}
+
+The implementation of the attributed grammar (ATG) is an extension of the grammar shown in \ref{cha:ANTLRGrammar}. As ANTLR does not support Kotlin as an implementation language, the ATG is implemented in Java. The code written in the grammar file is directly embedded into the generated parser and executed during the parse process. Because Java and Kotlin are compatible on a bytecode level, the AST which is written in Kotlin, can be used in the Java based ATG implementation. 
+
+Since the AST and other needed classes like \verb|ArrayList| are in different packages, they need to be imported. For this the \verb|@header| section is used. The code written in this section is added to the top of the generated parser before the class declaration and thus can be used for the required import statements. 
+
+Similar to the listener-implementation, the ATG-implementation relies on stacks for the management of AST nodes. The stacks are defined in the \verb|members| section. This section is pasted into the class body of the parser, and thus member variables can be defined here. Besides the stacks, also the result of the AST generation, the \verb|MiniCpp| object is stored as an instance variable. The scope handling is performed in the same way as in the listener-implementation via the \verb|ScopeHandler| class. Some utility methods are also defined in the member section. 
+
+
+Listing \ref{lst:ANTLRATGMiniCpp} shows the ATG for the \verb|miniCpp| and \verb|miniCppEntry| rules. The semantic action for the \verb|miniCpp| rule instantiates the \verb|MiniCpp| AST class with the current scope and all \verb|miniCppEntries|. The positioning of the semantic action after the \verb|EOF| causes it to be executed at the end of the parsing process after all \verb|miniCppEntry| nodes have been parsed. The semantic actions for the \verb|miniCppEntry| rule retrieve nodes from their respective stack and put it onto the \verb|miniCppEntries| stack.   
+
+\begin{AntlrCode}[float,numbers=none,caption=ATG for the \texttt{miniCpp} and \texttt{miniCppEntry} rules., label=lst:ANTLRATGMiniCpp]
+    miniCpp: (miniCppEntry)* EOF                    
+    { result = new MiniCpp(className, scopeHandler.getScope(), miniCppEntries.stream().toList()); }
+    ;
+miniCppEntry:     
+      constDef                  { miniCppEntries.push(constDefs.pop()); }
+    | varDef                    { miniCppEntries.push(varDefs.pop()); }
+    | funcDecl                  { miniCppEntries.push(funcDecls.pop()); }
+    | funcDef                   { miniCppEntries.push(funcDefs.pop()); }
+    | SEM                       { miniCppEntries.push(Sem.INSTANCE); }
+;
+\end{AntlrCode}
+    
+
+In the case of rules like \verb|constDef| where there are one or more \verb|constDefEntry| nodes stored inside the \verb|ConstDef| AST node, a list is used to store the entries during the parse of the rule. This process is shown in listing \ref{lst:ANTLRATGConstDef}. After the first \verb|constDefEntry| is parsed, a list is created which stores all following \verb|constDefEntry| nodes.
+At the end of the rule a new \verb|ConstDef| node containing all \verb|constDefEntry| nodes, is instantiated and put onto the \verb|constDefs| stack.
+
+
+
+\begin{AntlrCode}[float,numbers=none,caption=ATG for the \texttt{constDef} rule., label=lst:ANTLRATGConstDef]
+constDef:    
+    CONST type constDefEntry          
+        { var entries = new ArrayList(List.of(constDefEntries.pop())); }
+    (
+        ',' constDefEntry           
+        { entries.add(constDefEntries.pop());}
+    ) 
+    * SEM
+        { constDefs.push(new ConstDef(types.pop(), entries)); }
+\end{AntlrCode}
+
+
+The ATG code visible in listing \ref{lst:ANTLRATGInit}, shows the rules \verb|init| and \verb|initOption|. For the \verb|BooleanInit| and \verb|IntInit| alternatives, values of their respective terminal classes must be processed. For the \verb|BooleanInit| alternative this means reading the text of the terminal class and parsing it to a boolean. The \verb|NullptrInit| alternative just puts the singleton instance of the \verb|NullPtrType| on the stack and thus does not need to read any value. For the \verb|IntInit| alternative, the integer value is retrieved by parsing the text of the \verb|INT| terminal class. In case a sign is present it is checked if it is negative. In case of a negative sign the integer value is inverted. 
+
+\begin{AntlrCode}[float,numbers=none,caption=ATG for the \texttt{initOption} rule., label=lst:ANTLRATGInit]
+init:        '='  initOption;
+initOption:    
+   BOOLEAN                          
+       { inits.push(new Init(newBoolType(
+            Boolean.parseBoolean($BOOLEAN.text)
+          )));  
+       }             #BooleanInit
+ | NULLPTR                          
+       { inits.push(new Init(NullPtrType.INSTANCE)); }                                     #NullptrInit
+ | (SIGN)? INT
+       {
+         var value = Integer.parseInt($INT.text);
+         if ($SIGN != null && $SIGN.text.equals("-")) {
+             value = -value;
+         }
+         inits.push(new Init(new IntType(value)));
+       }             #IntInit
+;
+    \end{AntlrCode}
+
+
+The execution of the ATG functions in the same way as for the visitor-implementation in listing \ref{lst:VisitorExec}. The parser is executed by calling the \verb|miniCpp| method. Once this method has finished executing, the generated AST can be retrieved via the \verb|result| variable of the parser. 
+
+
+
 
