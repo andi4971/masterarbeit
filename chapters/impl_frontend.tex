@@ -473,5 +473,28 @@ initOption:
 The execution of the ATG functions in the same way as for the visitor-implementation in listing \ref{lst:VisitorExec}. The parser is executed by calling the \verb|miniCpp| method. Once this method has finished executing, the generated AST can be retrieved via the \verb|result| variable of the parser. 
 
 
+\section{Detection of semantic errors}
+
+The MiniC\verb|++| compiler frontend implements a number of semantic checks. During the parsing process if a semantic error is detected a \verb|SemanticException| is raised. This exception is then caught by the \verb|SemanticErrorAspect| aspect. The \verb|performErrorHandling| method shown in listing \ref{lst:ListenerScopeHandler} processes the exception. First the \verb|ParseRuleContext| object is extracted from the arguments of the original method. This object contains the information about the current line and column number in the parsing process. The exception contains a message about the cause of the error. The information is then printed on the error output stream. A \verb|doExit| flag allows setting whether the program should exit upon detection of a semantic error. If the program should continue executing, the error is thrown again and saved in the \verb|previousException| field to avoid raising the same exception twice.    
 
 
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{performErrorHandling} method., label=lst:ListenerScopeHandler]
+fun performErrorHandling(joinPoint: ProceedingJoinPoint): Any {
+    return try {
+        joinPoint.proceed()
+    }catch (e: SemanticException) {
+        val ctx = joinPoint.args.first() as ParserRuleContext
+        if(previousException != e) {
+            System.err.println("Error on line ${ctx.start.line}:${ctx.start.charPositionInLine} : ${e.message}")
+        }
+
+        previousException = e
+
+        if(doExit) {
+            exitProcess(1)
+        }else {
+            throw e
+        }
+    }
+}
+\end{KotlinCode}
