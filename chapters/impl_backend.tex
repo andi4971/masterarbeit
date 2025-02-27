@@ -1,0 +1,21 @@
+\chapter{Implementation Backend}
+
+The focus of this chapter is on the implementation of the backend of the compiler. First, the differences between Java and C\verb|++| are presented. This is followed by the explanation of the source code generation. Finally, the generation of the bytecode is shown.
+
+\section{Differences between Java and C\texttt{++}}
+
+When compiling MiniC\verb|++| source code to Java bytecode there are multiple differences in the functionality of both languages that need to be considered. The goal is to consider these differences and preserve the functionality of the MiniC\verb|++| code in bytecode. 
+
+\subsection{Array deletion}
+
+MiniC\verb|++| includes the \verb|delete| keyword which reclaims the memory used for an array and invalidates the reference to it. Java on the other hand does not provide such a mechanism. In Java the memory is managed by the JVM and the program can only request for the memory to be reclaimed by the garbage collector. To mimic MiniC\verb|++|'s behavior as best as possible, the delete statement is transformed into a null assignment. Thus, if the array is only used inside one function, its memory can be reclaimed by the garbage collector. This solution however does not work if an array is passed as an input parameter into a function. This is because then a reference to the array will also exist in another function making it impossible to reclaim the memory.  
+
+\subsection{cout and cin}
+
+In MiniC\verb|++| input and output to and from the console can be performed via the \verb|cout| and \verb|cin| streams. For output Java uses the \verb|System.out| stream with separate methods for normal print and print with new line. All output statements therefore need to be transformed to either \verb|System.out.print| or \verb|System.out.println|. The latter one is used when a \verb|endl| is detected. 
+
+For input the \verb|java.util.Scanner| class can be used. The constructor of this class takes an input stream as a parameter. For the console in Java this is \verb|System.in|. The scanner then provides methods to conveniently read the types supported in MiniC\verb|++|, namely integer and boolean.
+
+\subsection{expression evaluation}
+
+\subsection{function declarations and classes}
