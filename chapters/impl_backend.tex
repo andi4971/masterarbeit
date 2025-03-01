@@ -6,7 +6,7 @@ The focus of this chapter is on the implementation of the backend of the compile
 
 When compiling MiniC\verb|++| source code to Java bytecode there are multiple differences in the functionality of both languages that need to be considered. The goal is to consider these differences and preserve the functionality of the MiniC\verb|++| code in bytecode. 
 
-\subsection{Array deletion}
+\subsection{Array Deletion}
 
 MiniC\verb|++| includes the \verb|delete| keyword which reclaims the memory used for an array and invalidates the reference to it. Java on the other hand does not provide such a mechanism. In Java the memory is managed by the JVM and the program can only request for the memory to be reclaimed by the garbage collector. To mimic MiniC\verb|++|'s behavior as best as possible, the delete statement is transformed into a null assignment. Thus, if the array is only used inside one function, its memory can be reclaimed by the garbage collector. This solution however does not work if an array is passed as an input parameter into a function. This is because then a reference to the array will also exist in another function making it impossible to reclaim the memory.  
 
@@ -16,6 +16,131 @@ In MiniC\verb|++| input and output to and from the console can be performed via 
 
 For input the \verb|java.util.Scanner| class can be used. The constructor of this class takes an input stream as a parameter. For the console in Java this is \verb|System.in|. The scanner then provides methods to conveniently read the types supported in MiniC\verb|++|, namely integer and boolean.
 
-\subsection{expression evaluation}
+\subsection{Expression Evaluation}
 
-\subsection{function declarations and classes}
+MiniC\verb|++| allows for more complex expression evaluations than Java. An expression like $4 < 5 < 3$ is possible in MiniC\verb|++| but not in Java. The way this expression is evaluated is as follows: First the left side $4 < 5$ is evaluated resulting in either a 1 or a 0. Then this is compared against the 3, e.g. $0 < 3$, if the previous expression resulted in a 0. 
+
+In Java this needs to be implemented as nested \verb|if| statements in the scheme of \verb|if(expr) ? 1 : 0|. If the expression is true then the result is a 1 and otherwise 0. The following expression then uses this result for its comparison.
+
+\subsection{Function Declarations and Classes}
+
+MiniC\verb|++| requires at least a declaration (or a full definition) of a function earlier in the source code file before it can be referenced. In Java however, methods can be referenced even if they are only defined later in the source code file. Therefore, there would be no need to enforce this rule, besides making sure that the function is actually defined at some point in the source code file. However, to honor this functionality of MiniC\verb|++|, a semantic exception is raised during the parse process if a reference of a function that is not yet declared is detected. 
+
+MiniC\verb|++| does not include the concept of classes. Multiple functions are defined in a file but are not related to each other on a class level. In Java there can only be methods defined. Standalone functions outside of classes are not possible. To translate the MiniC\verb|++| source code to Java bytecode, all functions are put inside the same class. To mimic the behavior of MiniC\verb|++| as close as possible, all methods are defined as static methods.  
+
+\section{Source Code Generation}
+
+For the development of a compiler it is beneficial to implement a module for source code generation. The source code generation module takes the AST as input and generates MiniC\verb|++| source code. By generating source code from the AST, the correctness of the compiler frontend can be tested. If the code generated from the source code generator matches the original source code, it can be assumed that the AST has been correctly generated. When comparing there are some potential problems like formatting and comments. Therefore, it is best to take the generated source code and repeat the generation process one more time. The then generated source code can be used for comparison without any formatting or comments interfering. 
+
+The implementation of the source code generator uses a string builder combined with Kotlin extension functions. For each type of the AST there is a \verb|generateSourceCode| extension function which takes a string builder instance as the sole parameter. The extension functions are grouped according to their type into the following files:
+
+\begin{itemize}
+    \item \verb|BlockGenerator|
+    \item \verb|ConstVarDefGenerator|
+    \item \verb|ExprGenerator|
+    \item \verb|FuncGenerator|
+    \item \verb|MiniCppGenerator|
+    \item \verb|StatGenerator|
+    \item \verb|TypeGenerator|
+\end{itemize}
+
+The code for the \verb|MiniCpp| AST node is shown in listing \ref{lst:SrcGenMiniCpp}. In this function the string builder is instantiated and eventually returned as a normal string. For each \verb|miniCppEntry| the respective \verb|generateSourceCode| function is called. The code to generate the \verb|ConstDef| node is shown in listing \ref{lst:SrcGenConstDef}. First the \verb|const| keyword is added to the string builder, followed by the source code for the type. Then all identifiers with their respective value are appended to the string builder. On the last entry the delimiter is omitted. 
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateSourceCode} method for the \texttt{MiniCpp} class., label=lst:SrcGenMiniCpp]
+fun MiniCpp.generateSourceCode(): String {
+    val sb = StringBuilder()
+    entries.forEach {
+        when (it) {
+            is ConstDef -> it.generateSourceCode(sb)
+            is FuncDecl -> it.generateSourceCode(sb)
+            is FuncDef -> it.generateSourceCode(sb)
+            Sem -> sb.appendLine(";")
+            is VarDef -> it.generateSourceCode(sb)
+        }
+    }
+    return sb.toString()
+}
+\end{KotlinCode}
+    
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateSourceCode} method for the \texttt{ConstDef} class., label=lst:SrcGenConstDef]
+fun ConstDef.generateSourceCode(sb: StringBuilder) {
+    sb.append("const ")
+    type.generateSourceCode(sb)
+    sb.append(" ")
+    entries.forEachIndexed { index, entry ->
+        sb.append("${entry.ident.name} = ")
+        entry.value.generateSourceCode(sb)
+
+        if (index != entries.lastIndex) {
+            sb.append(", ")
+        }
+    }
+    sb.appendLine(";")
+}
+\end{KotlinCode}
+
+\section{Classes}
+
+The first step when generating bytecode is to handle everything that is relevant on a class level. Every piece of code in Java is organized inside a class and stored inside a \verb|.class| file. For this task the ASM framework provides the \verb|ClassWriter| class. This class provides visitor-pattern based methods for generating a class file. The code for generating the class definition is shown in listing \ref{lst:BtGenClassDef}. The constructor for the \verb|ClassWriter| takes an integer parameter that functions as a flag which modifies the behavior of the class writer. In this case the \verb|COMPUTE_FRAMES| and  \verb|COMPUTE_MAXS| flags are used. \verb|COMPUTE_FRAMES| enables computation of stack map frames of methods from the bytecode. Further \verb|COMPUTE_MAXS| calculates the maximum stack size from the bytecode. Those two flags combined ease the development of the code generation since those two aspects are now computed automatically. Otherwise, it would be necessary to keep track of those values manually for every method generation, increasing complexity. 
+
+The \verb|visit| method defines a class. The first parameter is the \verb|CLASS_FILE_VERSION| constant which has the value 65. This corresponds to Java Version 21. The second parameter defines the access flags of the class. \verb|ACC_PUBLIC| means that the class is public. The third parameter is the class name. The fourth parameter defines the signature of the class, which is only relevant for generic classes and therefore left as \verb|null|. The superclass is described by the fifth parameter. As the concept of classes does not exist in MiniC\verb|++| Java's default superclass \verb|java.lang.Object| is used as the superclass. Via the last parameter implemented interfaces can be defined. This parameter is also set to \verb|null| as MiniC\verb|++| does not support interfaces.
+
+\begin{KotlinCode}[float,numbers=none,caption=Code for the definition of a class., label=lst:BtGenClassDef]
+val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS)
+className = miniCpp.className
+classWriter.visit(
+    CLASS_FILE_VERSION,
+    ACC_PUBLIC,
+    miniCpp.className,
+    null,
+    "java/lang/Object",
+    null
+)
+\end{KotlinCode}
+
+
+Once the class has been initialized, the bytecode generation based on the AST can begin. On the top level this process is shown in listing \ref{lst:BtGenTopLevelCode}. First a \verb|StaticVarDefGenerator| is instantiated. The same instance is used across the entire generation process, since the generation of static variable definitions requires the modification of the static class initializer block. Then for each \verb|miniCppEntry| the appropriate bytecode is generated. For \verb|Sem| and \verb|FuncDecl| no code needs to be generated, since they don't encode any semantic information relevant for bytecode. The \verb|addStaticScannerField| adds a scanner to the static variables. This is needed for the generation of \verb|cin| statements. To make the class executable a main method is needed. This is done via the \verb|addMainMethod| method. Calling the \verb|visitEnd| method of the \verb|classWriter| finished the code generation for the class. Finally, calling the \verb|toByteArray| method returns the bytecode of the generated class as a byte array. 
+
+\begin{KotlinCode}[float,numbers=none,caption=Top-level code for the bytecode generation., label=lst:BtGenTopLevelCode]
+val staticVarDefGenerator = StaticVarDefGenerator(classWriter)
+miniCpp.entries.forEach {
+    when (it) {
+        is VarDef -> staticVarDefGenerator.generateStatic(it)
+        is ConstDef -> StaticConstDefGenerator(classWriter).generateStatic(it)
+        is FuncDef -> FuncDefGenerator(classWriter, miniCpp.className).generate(it)
+        is Sem, is FuncDecl -> ""
+    }
+}
+staticVarDefGenerator.generateStaticInitBlock(miniCpp)
+addStaticScannerField(classWriter)
+addMainMethod(classWriter)
+classWriter.visitEnd()
+return classWriter.toByteArray()
+\end{KotlinCode}
+
+\section{Functions}
+
+A function in MiniC\verb|++| is translated into a class method in bytecode. The \verb|FuncGenerator| accepts a \verb|FuncDef| AST node and generates the bytecode for it. The code for the generation is shown in listing \ref{lst:BtGenFuncGen}. To generate code for a method a \verb|MethodVisitor| instance is needed. The visitor can be acquired by calling the \verb|visitMethod| method of the class writer. The parameter of the \verb|visitMethod| define the signature of the method to be generated. The first parameter defines the access of the method. \verb|ACC_PUBLIC| and \verb|ACC_STATIC| make it so that the method has the modifiers \verb|public| and \verb|static|. The second parameter is the name of the method. 
+
+\begin{KotlinCode}[float,numbers=none,caption=Top-level code for the bytecode generation., label=lst:BtGenFuncGen]
+fun generate(funcDef: FuncDef) {
+    val methodVisitor = classWriter.visitMethod(
+        Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC,
+        funcDef.funHead.ident.name,
+        funcDef.funHead.getDescriptor(),
+        null,
+        null
+    )
+    methodVisitor.run {
+        visitCode()
+        BlockGenerator(methodVisitor, className).generate(funcDef.block, null)
+        visitInsn(RETURN)
+        visitMaxs(0, 0)
+        visitEnd()
+    }
+}
+\end{KotlinCode}
+
+
