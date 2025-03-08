@@ -131,7 +131,7 @@ Per default ANTLR generates one method for each rule. In the case of multiple al
       | 'long'    #LongType
       | 'string'  #StringType
       ;
-  \end{AntlrCode}
+\end{AntlrCode}
 
 \section{Syntax Tree and Abstract Syntax Tree (AST)}
 
@@ -141,7 +141,7 @@ Listing \ref{lst:SyntaxTreeEx} shows the syntax tree of the arithmetic expressio
 %TODO
 This syntax tree contains the non-terminal symbol \texttt{Expression, Term, Fact} and the terminal class \texttt{number}. The expression is built from two terms and one operator. The left term represents a multiplication consisting of two factors and an operator. All factors in the syntax tree contain the terminal class \texttt{number} which hold the concrete numbers. This structure further enables the representation of the precedence rules of arithmetic operations directly in the syntax tree.  
 
-\subsubsection{Abstract Syntax Tree (AST)}
+\subsection{Abstract Syntax Tree (AST)}
 In an abstract syntax tree (AST) only a subset of the nodes from the original syntax tree are included. The goal is to focus on the semantic aspects of the syntax tree. Syntactical details, e.g., semicolons are omitted. 
 
 The generation of an AST from a syntax tree can be done in multiple ways. One method is to generate the AST during the parse, which increases performance since the syntax tree does not need to be traversed twice. This can be implemented by using an attributed grammar with semantic actions that embed the AST generation code directly into the parser. Parsers like ANTLR also support the listener pattern to execute code during the parse. Alternatively the AST can be generated after the parse phase from the syntax tree. To traverse the syntax tree the visitor pattern can be used for example.  
@@ -170,7 +170,7 @@ Continuing with the previous example, listing \ref{lst:ASTEx} shows the AST of t
                                 3     5
 \end{GenericCode}
 
-\subsection{Visitor-Pattern for Tree Transformation}
+\section{Visitor-Pattern for Tree Transformation}
 
 In the case that a syntax tree is already present, the visitor-pattern can be used to create an AST from the syntax tree. Using the visitor-pattern, the syntax tree gets traversed and then step by step the AST is constructed. The visitor-pattern allows for the separation of algorithms from the objects they operate on. Instead of including the code for the generation of an AST object in the syntax tree object, a separate object, a so-called \textit{visitor} is taking care of this. 
 
@@ -200,7 +200,7 @@ interface SyntaxTreeVisitor<T> {
   \end{KotlinCode}
 
 
-\subsection{Listener-Pattern for Tree Transformation}
+\section{Listener-Pattern for Tree Transformation}
 
 The listener-pattern is used for \textit{listening} to events or notifications from another object. In the context of parsing, the listener-pattern is used to handle parse events coming from the parser. This includes events such as entering and exiting a node during the parse. When using the listener-pattern the parse tree is only traversed once. This is because the events get pushed to the listeners during the parse. 
 
