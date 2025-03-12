@@ -610,17 +610,15 @@ The \verb|FactGenerator| manages the code generation for each of the implementat
 
 The \verb|generateNewArray| method instantiates a new array. The expression included in the \verb|NewArrayTypeFact| is responsible for producing the value representing the length of the array. An array can be either of type integer or boolean. The \verb|NEWARRAY| instruction then instantiates the new array for the specified type and length.  
 
-
-
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generate} method of the \texttt{FactGenerator}., label=lst:BtGenExprFactGen]
 fun generate(fact: Fact, shouldEmitValue: Boolean = true) {
     when {
-        fact is ActionFact -> ActionFactGenerator(mv).generate(fact, shouldEmitValue)
-        fact is BoolType && shouldEmitValue -> mv.pushBoolValue(fact.value)
-        fact is IntType && shouldEmitValue -> mv.pushIntValue(fact.value)
-        fact is NullPtrType && shouldEmitValue -> mv.pushNullValue()
-        fact is ExprFact -> ExprGenerator(mv).generate(fact.expr, true)
-        fact is NewArrayTypeFact -> generateNewArray(fact)
+       fact is ActionFact -> ActionFactGenerator(mv).generate(fact, shouldEmitValue)
+       fact is BoolType && shouldEmitValue -> mv.pushBoolValue(fact.value)
+       fact is IntType && shouldEmitValue -> mv.pushIntValue(fact.value)
+       fact is NullPtrType && shouldEmitValue -> mv.pushNullValue()
+       fact is ExprFact -> ExprGenerator(mv).generate(fact.expr, true)
+       fact is NewArrayTypeFact -> generateNewArray(fact)
     }
 }
 
@@ -635,4 +633,55 @@ private fun generateNewArray(fact: NewArrayTypeFact) {
 }
 \end{KotlinCode}
 
+\subsection{ActionFact}
+
+The \verb|ActionFact| AST node is responsible for the following operations: increment and decrement using the \verb|++| and \verb|--|, loading a variable/array, loading a value from an array, and calling a function. The \verb|ActionFactGenerator| performs the code generation for these operations. 
+
+\subsubsection{Increment and Decrement}
+
+Incrementing and decrementing operations are available for variables and elements inside an array. The increment/decrement of a variable is implemented in the \verb|iIncDec| method shown in listing \ref{lst:BtGenExprActionFactIncDecGen}. The generated code is different for static and local variables. For a static variable, its value must be loaded first via the \verb|GETSTATIC| opcode. For an increment the constant 1, and for a decrement the constant -1 is loaded onto the stack. The \verb|IADD| opcode then perform and addition, thus incrementing or decrementing the variable's value. The sum is then stored in the static variable using the \verb|PUTSTATIC| opcode. For a local variable, bytecode provides an instruction to directly increment/decrement its value, without having to load/store the variable explicitly. The \verb|visitIincInsn| method takes the variable index and an integer value as arguments, and then performs an increment of that variable by the value. A decrement can be performed by passing a negative integer value into the method.
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{iIncDec} method of the \texttt{ActionFactGenerator}., label=lst:BtGenExprActionFactIncDecGen]
+private fun iIncDec(variable: Variable, incDec: IncDec) {
+    if (variable.static) {
+        mv.visitFieldInsn(GETSTATIC, className, variable.ident.name, variable.type.descriptor)
+        when (incDec) {
+            IncDec.INCREASE -> mv.visitInsn(ICONST_1)
+            IncDec.DECREASE -> mv.visitInsn(ICONST_M1)
+        }
+        mv.visitInsn(IADD)
+        mv.visitFieldInsn(PUTSTATIC, className, variable.ident.name, variable.type.descriptor)
+    } else {
+        when (incDec) {
+            IncDec.INCREASE -> mv.visitIincInsn(variable.index, 1)
+            IncDec.DECREASE -> mv.visitIincInsn(variable.index, -1)
+        }
+    }
+}
+\end{KotlinCode}
+
+Incrementing/decrementing the value of an element inside an array is done similarly to static variables. First, the index of the element inside the array is loaded. This is done in the method that handles the array access. The index is then duplicated and the element's value is loaded. The \verb|DUP_X2| opcode is generated either before or after the increment/decrement. If the operator is prefixed, then the \verb|DUP_X2| opcode is generated directly after the value is loaded, otherwise after the value has been updated. The bytecode for the addition is the same as for static variables. The sum of the addition is then stored back in the array with the \verb|ASTORE| opcode. 
+
+\subsubsection{Variable Access}
+
+The \verb|generateVariableAccess| method shown in listing \ref{lst:BtGenExprActionFactVarAccGen} is responsible for generating the bytecode for variable accesses. The \verb|Variable| instance associated to the identifier provides the information about the variable kind. An increment/decrement is performed independent of the variable kind, either before or after the variable load. Static variables can be loaded with the \verb|GETSTATIC| opcode. Since a constant variable always has the same value, it is not necessary to allocate an actual local variable for it, and its value can be loaded from the constant pool with the \verb|visitLdcInsn| method. Local variables can be either an array or a boolean/integer value. For an array load the \verb|ALOAD| opcode is used, while for boolean/integer the \verb|ILOAD| opcode is appropriate. 
+
+
+\begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateVariableAccess} method of the \texttt{ActionFactGenerator}., label=lst:BtGenExprActionFactVarAccGen]
+fun generateVariableAccess(actionFact: ActionFact, shouldEmitValue: Boolean) {
+    val variable = actionFact.scope.getVariable(actionFact.ident)
+    actionFact.prefix?.let {   iIncDec(variable, it)    }
+    if (shouldEmitValue) {
+        when {
+            variable.static && !variable.const -> mv.visitFieldInsn(
+                GETSTATIC, className, variable.ident.name, variable.type.descriptor)
+            variable.const -> mv.visitLdcInsn(variable.constValue)
+            variable.type in ARR_TYPES -> mv.visitVarInsn(ALOAD, variable.index)
+            else -> mv.visitVarInsn(ILOAD, variable.index)
+        }
+    }
+    actionFact.suffix?.let {   iIncDec(variable, it)    }
+}
+\end{KotlinCode}
 
