@@ -12,3 +12,4 @@ nullability
 Symboltable
 symboltable
 bytecdode
+booleans
