@@ -1,1 +1,54 @@
 \chapter{Comparison of AST-Generation methods}
+
+This chapter compares the three implementations for the AST-Generation using ANTLR. The visitor-pattern, listener-pattern and attributed grammar implementation are discussed. They are compared in the following aspects:
+
+\begin{itemize}
+    \item Ease of use
+    \item Maintainability
+    \item Performance
+    \item Complexity
+\end{itemize}
+
+Lastly, an overall recommendation is given, based on the considered aspects. 
+
+\section{Ease of use}
+
+Ease of use describes how simple it is to implement the generation of an AST using a given approach. This section highlights the advantages and disadvantages of each approach.  
+
+\subsection{Listener-Pattern}
+
+The main benefit of the listener-pattern is that it does not require manual traversal of the syntax tree. This aspect is taken care of by the generated parser. Only the listener needs to be defined and registered to the parser. Every time a node is entered and exited, the respective listener method is called. For the generation of an AST, this leads naturally to the usage of stacks to manage already parsed nodes. ANTLR performs top-down parsing meaning that it will first enter a higher-level node, then enter and exit all the lower-level nodes, before exiting the higher-level node. To keep track of all the parsed nodes, stacks can be used. If the node requires one or more elements of a lower-level node it can pop the necessary amount from the stack. It is also possible to rely on the provided \verb|ParseContext| and generate the necessary AST nodes from it. This approach however defeats the purpose of using the listener-pattern. As soon as non-terminal child nodes are processed from the \verb|ParseContext|, a manual traversal of the syntax tree is performed. This means that nodes end up being processed twice unnecessarily. 
+
+The solution to this is to strictly only process terminal nodes in a listener method and retrieve all non-terminal child nodes via stacks. For more complex applications this may lead to many stack instances being created and thus increasing the length of the listener implementation. Including the \verb|enter| and \verb|exit| methods for each node, it is possible for the source file to grow to multiple hundred lines of code just from method stubs and stack definitions. 
+
+ANTLR offers ways to deal with unnecessary large listener implementations, by providing a \verb|BaseListener| implementation. This \verb|BaseListener| contains empty implementations for all \verb|enter| and \verb|exit| methods. 
+Extending the \verb|BaseListener| allows for the implementation to only considers the methods of nodes that are relevant to the generation of the AST. For more complex applications, the source code may still reach multiple hundred lines of code, even when relying on the \verb|BaseListener|. 
+
+It is possible to split the listener implementation into multiple files since ANTLR allows the registration of more than one listener at the same time. Each file must then only handle a subset of all nodes, decreasing file length. The flip side of this approach is that then communication between the listeners becomes a necessity. A listener that requires a node that another listener processed, must be able to retrieve the node from that listener's stack. This can significantly increase the complexity. In the listener-implementation of this thesis' compiler, there are 43 listeners implemented that all need to communicate with each other. 
+
+
+\subsection{Visitor-Pattern}
+
+When using the visitor-pattern, the syntax tree is already parsed and can be manually traversed to generate the AST. A visitor processes a node and proceeds to call other visitors that provide the AST nodes. Depending on the grammar and use case it can be preferred to have manual control over the traversal to e.g. only process a node under specific circumstances.  
+
+Similar to the \verb|BaseListener|, ANTLR also generates a \verb|BaseVisitor| that contains empty implementations for the \verb|visit| methods of all nodes of the syntax tree. A concrete visitor then only needs to override the methods that are relevant for the AST node it generates. Each visitor has a generic type parameter that determines the visitor method's return type. This enables a setup in which each visitor is responsible for exactly one AST node type, leading to a separation of concerns. Again similar to the listener-pattern, the compiler in this master thesis contains 37 visitors. It would also be possible to implement everything in one visitor, however this would lead to the same problems discussed for the listener implementation.  
+
+Compared to the listener-implementation the visitor-implementation may seem a bit more complicated due to the inversion of control. When using visitors, the nodes of the syntax tree are not traversed directly by accessing the values, but by calling the respective visitor method of each node. 
+
+\subsection{Attributed Grammar}
+
+From an ease of use perspective, using an attributed grammar or short ATG, proves to be the simplest option. All necessary code can be directly embedded into the grammar file, showing clearly which rule causes what code to be executed. ANTLR allows to also embed code in the grammar file that is unrelated to a specific rule in order to e.g. define variables or methods. The system is also flexible enough to allow for referencing of methods or variables defined outside the grammar file. For example, with this longer method implementations can be extracted into a separate file. 
+
+Semantic actions can be added before, between and after every symbol, allowing for fine-grained control over when a specific piece of code should be executed. Further, semantic predicates enable to dynamically alter the generated language, allowing for more complex use cases to be implemented directly in the grammar. 
+
+The tooling support for implementing attributed grammars is somewhat limited. For this master thesis IntelliJ IDEA with the ANTLR plugin was used. While it offers syntax highlighting for all lexical and semantic rules, no highlighting or linting is performed on the code of the semantic actions. This means that to notice an error in the code, the parser must be generated, and its code inspected. This can lead to unexpected errors and makes the development in general more time-consuming.
+
+\section{Maintainability}
+
+Maintainability is relevant for adapting and extending an already existing compiler codebase. When the grammar is modified, the AST generation must be adapted as well in most cases. Depending on the implementation, the adaption might be more or less complicated. 
+
+\subsection{Listener-Pattern}
+
+Extending the AST generation when using the listener-pattern requires the implementation of the \verb|enter| and \verb|exit| methods of the newly added syntax nodes. All existing methods where these nodes are required need to be adapted. Depending on what semantic information the new syntax nodes contain, methods that do not directly depend on those nodes may also need to be adapted. This can be complicated if the logic is spread out over multiple files. When multiple listeners are used, every listener would need to be adapted where these syntax nodes are relevant. 
+
+Due to the implicit traversal of the syntax tree, it is not inherently obvious when the order of traversal has changed. This can lead to errors in the generation of the AST that may be difficult to detect and fix. As the application continues to grow and more listeners and stacks are added, it becomes more complex and difficult to understand.- This is especially the case if the code is spread out over multiple files.  
