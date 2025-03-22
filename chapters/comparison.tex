@@ -52,3 +52,28 @@ Maintainability is relevant for adapting and extending an already existing compi
 Extending the AST generation when using the listener-pattern requires the implementation of the \verb|enter| and \verb|exit| methods of the newly added syntax nodes. All existing methods where these nodes are required need to be adapted. Depending on what semantic information the new syntax nodes contain, methods that do not directly depend on those nodes may also need to be adapted. This can be complicated if the logic is spread out over multiple files. When multiple listeners are used, every listener would need to be adapted where these syntax nodes are relevant. 
 
 Due to the implicit traversal of the syntax tree, it is not inherently obvious when the order of traversal has changed. This can lead to errors in the generation of the AST that may be difficult to detect and fix. As the application continues to grow and more listeners and stacks are added, it becomes more complex and difficult to understand.- This is especially the case if the code is spread out over multiple files.  
+
+\subsection{Visitor-Pattern}
+
+In case the grammar gets extended, and new rules are added, a visitor needs to be created for every type that is relevant to the AST. The visitor then implements all the \verb|visit| methods that are relevant for the AST node it produces. In case an existing rule is modified, and new symbols are added to it, only the \verb|visit| method for that specific rule needs to be adapted. 
+
+The visitor-pattern is less error-prone, because all \verb|visit| methods return a value, eliminating the need for manual state tracking with e.g. stacks. The explicit traversal of the syntax tree makes it easier to follow the execution flow during debugging, since the developer is directly in control of the traversal order. If the traversal order must be updated, only the \verb|visit| methods for the specific sections must be updated, without having to modify the grammar. Just by looking at the code for the visitors it is possible to follow the execution flow.
+
+\subsection{Attributed Grammar}
+
+Performing changes on an attributed grammar is straightforward, as the rules and semantic actions are both contained in the same file. It is clearly visible when performing a change on a rule, how the associated semantic action is affected. Although, for more complex rules and grammars the intertwining of symbols and semantic actions can make the attributed grammar difficult to read. ANTLR offers the possibility to split up grammars into multiple files, which can help with excessively long files. 
+
+Similar to the listener-pattern some form of manual state management in the form of stacks is often necessary, resulting in additional effort when adding or modifying rules. In contrast to the listener-pattern however, the execution flow is clearly understandable from the grammar. 
+
+A potentially significant problem when using an attributed grammar is caused by intertwining code into the grammar. A feature of ANTLR is that it can generate a parser for multiple host languages from the same grammar file. However, by including code in the grammar file itself, this ability is lost. The parser can then only be generated for the programming language that is used to write the semantic actions. It is possible to maintain another version of the grammar without any programming language dependent code, however this requires additional work and could prove to be another source of errors if discrepancies between the two versions of the grammar arise. Since semantic actions are embedded into the parser, debugging must also be performed directly in the parser code. This can be challenging as the generated parser code is difficult to understand due to its nature as a state machine.
+
+\section{Performance}
+
+The performance of each implementation is evaluated by parsing a source file and measuring the time it takes until the AST is generated. Time measurement is performed by the built-in Kotlin function \verb|measureTime|. Source code files of different lengths are used to show how each implementation deals with smaller and larger files. The following file sizes are used:
+
+\begin{itemize}
+    \item small: 98kb
+    \item medium: 952kb
+    \item long: 9504kb
+    \item very long: 28527kb 
+\end{itemize}
