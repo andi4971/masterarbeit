@@ -69,13 +69,58 @@ A potentially significant problem when using an attributed grammar is caused by 
 
 \section{Performance}
 
-The performance of each implementation is evaluated by parsing a source file and measuring the time it takes until the AST is generated. Time measurement is performed by the built-in Kotlin function \verb|measureTime|. Source code files of different lengths are used to show how each implementation deals with smaller and larger files. The following file sizes are used:
+The performance of each implementation is evaluated by parsing a source file and measuring the time it takes until the AST is generated. Time measurement is performed by the built-in Kotlin function \verb|measureTime|. Further, the memory consumption is also measured. For this, the difference between the total available memory and free memory is calculated. Via \verb|Runtime.getRuntime()|, the current runtime information can be retrieved, and the \verb|freeMemory()| and \verb|totalMemory()| methods provide the total and free memory. Source code files of different lengths are used to show how each implementation deals with smaller and larger files. For each source file and implementation the evaluation is performed three times and an average is taken. The following file sizes are used:
 
 \begin{itemize}
-    \item small: 98kb
-    \item medium: 952kb
-    \item long: 9504kb
-    \item very long: 28527kb 
+    \item 98kb,
+    \item 952kb,
+    \item 9504kb and
+    \item 28527kb.
 \end{itemize}
 
-For each source file and implementation the evaluation is performed three times and an average is taken. 
+
+\subsection{Runtime}
+
+Table \ref{tab:ParseRuntime} shows the measured runtime for each implementation. The last row shows the runtime required just for generating the syntax tree. Through this, the overhead required for constructing the AST can be determined. Across all implementations, their runtime grows at a higher rate than just for parsing. The ATG implementation consistently performs the best among all three implementations, showing the smallest overhead. This is due to the fact that the ATG generates the AST during the parse and does not require a traversal of the generated syntax tree. When looking at the visitor implementation, it can be seen that the overhead due to the traversal of the syntax tree is relatively limited. The overhead percentually gets smaller for larger files. The runtime of the visitor and ATG implementations also increase at roughly the same rate. 
+
+The outlier in this statistic is the listener implementation. It has by far the longest runtime compared to all other implementations. This is largely due to the fact that multiple listeners are used for the implementation. Using multiple listeners makes the code more structured and easy to understand, however it significantly increases the required runtime. Each listener extends the \verb|minicppBaseListener|, which provides empty implementations for all listener methods. Each listener is only interested in a few of those methods, meaning that the invocations of all other methods serves no purpose. With over 40 different listeners this leads to many unnecessary invocations and thus increasing the runtime. The alternative is to implement everything inside one listener, at the cost of significantly worse code readability.
+
+
+\begin{table}[!ht]
+    \centering
+    \caption{Time required to parse MiniC\texttt{++} source code with each implementation of the frontend.}
+    \label{tab:ParseRuntime}
+    \begin{tabular}{|r|r|r|r|r|}
+    \hline
+         & 98kb File & 952kb File & 9504kb File & 28527kb File \\ \hline
+        \textbf{Visitor} & 134ms & 302ms & 2985ms & 12733ms \\ \hline
+        \textbf{Listener} & 424ms & 2439ms & 24505ms & 76688ms \\ \hline
+        \textbf{ATG} & 97ms & 201ms & 2484ms & 10845ms \\ \hline
+        \textbf{Parse only} & 62ms & 131ms & 1317ms & 4274ms \\ \hline
+    \end{tabular}
+\end{table}
+
+
+\subsection{Memory consumption}
+
+Table \ref{tab:ParseMemory} shows the measured memory consumption for each implementation. The last row again shows the memory consumption for just the generation of the syntax tree. The visitor implementation consistently consumes the most memory, with quite an overhead when compared to just parsing. This is in parts due to the fact, that it must maintain the full syntax tree while generating the AST. Each visitor also instantiates other visitors, further increasing memory consumption. In contrast, the listener implementation consistently consumes the least amount of memory, although the difference to the ATG implementation is rather small. 
+
+
+\begin{table}[!ht]
+    \centering
+    \caption{Memory consumption during the parse of MiniC\texttt{++} source code with each implementation of the frontend.}
+    \label{tab:ParseMemory}
+    \begin{tabular}{|r|r|r|r|r|}
+    \hline
+         & 98kb File & 952kb File & 9504kb File & 28527kb File \\ \hline
+        \textbf{Visitor} & 20.7MB & 130.0MB & 1424.1MB & 3742.4MB \\ \hline
+        \textbf{Listener} & 12.5MB & 121.6MB & 1251.8MB & 3456.2MB \\ \hline
+        \textbf{ATG} & 14.2MB & 123.4MB & 1311.8MB & 3687.9MB \\ \hline
+        \textbf{Parse only} & 11.0MB & 101.0MB & 1009.4MB & 2901.1MB \\ \hline
+    \end{tabular}
+\end{table}
+
+
+\section{Recommendation}
+
+For this recommendation, all aspects shown in this chapter are considered. Each implementation has aspects where it performs better than the other implementations. Overall however, the 
