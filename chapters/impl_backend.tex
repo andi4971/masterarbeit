@@ -1,50 +1,50 @@
-\chapter{Implementation Backend}
+\chapter{Implementation of the Backend}
 
-The focus of this chapter is on the implementation of the backend of the compiler. First, the differences between Java and C\verb|++| are presented. This is followed by the explanation of the source code generation. Finally, the generation of the bytecode is shown.
+The focus of this chapter is on the implementation of the backend of the MiniC\verb|++| compiler. First, the differences between Java and C\verb|++| are presented. This is followed by the explanation of the source code generation. Finally, the generation of the bytecode is shown.
 
 \section{Differences between Java and C\texttt{++}}
 
-When compiling MiniC\verb|++| source code to Java bytecode there are multiple differences in the functionality of both languages that need to be considered. The goal is to consider these differences and preserve the functionality of the MiniC\verb|++| code in bytecode. 
+When compiling MiniC\verb|++| source code to Java bytecode, there are multiple differences in the functionality of both languages that need to be considered. The goal is to consider these differences and preserve the functionality of MiniC\verb|++| in bytecode. 
 
 \subsection{Array Deletion}
 
-MiniC\verb|++| includes the \verb|delete| keyword which reclaims the memory used for an array and invalidates the reference to it. Java on the other hand does not provide such a mechanism. In Java the memory is managed by the JVM and the program can only request for the memory to be reclaimed by the garbage collector. To mimic MiniC\verb|++|'s behavior as best as possible, the delete statement is transformed into a null assignment. Thus, if the array is only used inside one function, its memory can be reclaimed by the garbage collector. This solution however does not work if an array is passed as an input parameter into a function. This is because then a reference to the array will also exist in another function making it impossible to reclaim the memory.  
+MiniC\verb|++| includes the \verb|delete| keyword which reclaims the memory used for an array and invalidates the reference to it. Java on the other hand does not provide such a mechanism. In Java, the memory is managed by the JVM and the program can only request for the memory to be reclaimed by the garbage collector. To mimic MiniC\verb|++|'s behavior as best as possible, the delete statement is transformed into a null assignment. Thus, if the array is only used inside one function, its memory can be reclaimed by the garbage collector. This solution however does not work if an array is passed as an input parameter into a function. This is because then a reference to the array will also exist in another function making it impossible to reclaim the memory.  
 
 \subsection{cout and cin}
 
-In MiniC\verb|++| input and output to and from the console can be performed via the \verb|cout| and \verb|cin| streams. For output Java uses the \verb|System.out| stream with separate methods for normal print and print with new line. All output statements therefore need to be transformed to either \verb|System.out.print| or \verb|System.out.println|. The latter one is used when a \verb|endl| is detected. 
+In MiniC\verb|++|, input and output to and from the console can be performed via the \verb|cout| and \verb|cin| streams. For output, Java uses the \verb|System.out| stream with separate methods for normal print and print with new line. All output statements therefore need to be transformed to either \verb|System.out.print| or \verb|System.out.println|. The latter one is used when an \verb|endl| is detected. 
 
-For input the \verb|java.util.Scanner| class can be used. The constructor of this class takes an input stream as a parameter. For the console in Java this is \verb|System.in|. The scanner then provides methods to conveniently read the types supported in MiniC\verb|++|, namely integer and boolean.
+For input, the \verb|java.util.Scanner| class can be used. The constructor of this class takes an input stream as a parameter. For the console in Java this is \verb|System.in|. The scanner then provides methods to conveniently read values of the types supported in MiniC\verb|++|, namely integer and boolean.
 
 \subsection{Expression Evaluation}
 
-MiniC\verb|++| allows for more complex expression evaluations than Java. An expression like $4 < 5 < 3$ is possible in MiniC\verb|++| but not in Java. The way this expression is evaluated is as follows: First the left side $4 < 5$ is evaluated resulting in either a 1 or a 0. Then this is compared against the 3, e.g. $0 < 3$, if the previous expression resulted in a 0. 
+MiniC\verb|++| allows for more complex expression evaluations than Java. An expression like $4 < 5 < 3$ is valid in MiniC\verb|++| but not in Java. The way this expression is evaluated is as follows: First the left side $4 < 5$ is evaluated resulting in either a 1 or a 0. Then this is compared to the 3, e.g., $0 < 3$, if the previous expression resulted in a 0. 
 
-In Java this needs to be implemented as nested \verb|if| statements in the scheme of \verb|if(expr) ? 1 : 0|. If the expression is true then the result is a 1 and otherwise 0. The following expression then uses this result for its comparison.
+In Java this needs to be implemented as nested \verb|if| statements in the scheme of \verb|if (expr) ? 1 : 0|. If the expression is true then the result is a 1 and otherwise 0. The following expression then uses this result for its comparison.
 
 \subsection{Function Declarations and Classes}
 
-MiniC\verb|++| requires at least a declaration (or a full definition) of a function earlier in the source code file before it can be referenced. In Java however, methods can be referenced even if they are only defined later in the source code file. Therefore, there would be no need to enforce this rule, besides making sure that the function is actually defined at some point in the source code file. However, to honor this functionality of MiniC\verb|++|, a semantic exception is raised during the parse process if a reference of a function that is not yet declared is detected. 
+MiniC\verb|++| requires at least a declaration (or a full definition) of a function earlier in the source code file before it can be called. In Java however, methods can be used/called even if they are only defined later in the source code file. Therefore, there would be no need to enforce this rule, besides making sure that the function is actually defined at some point in the source code file. However, to honor this functionality of MiniC\verb|++|, a semantic exception is raised during the parse process if a reference of a function that is not yet declared is detected. 
 
-MiniC\verb|++| does not include the concept of classes. Multiple functions are defined in a file but are not related to each other on a class level. In Java there can only be methods defined. Standalone functions outside of classes are not possible. To translate the MiniC\verb|++| source code to Java bytecode, all functions are put inside the same class. To mimic the behavior of MiniC\verb|++| as close as possible, all methods are defined as static methods.  
+MiniC\verb|++| does not include the concept of classes. Multiple functions are defined in a file but are not related to each other on a class level. In Java there can only be methods. Standalone functions outside of classes are not possible. To translate the MiniC\verb|++| source code to Java bytecode, all functions are put inside the same class. To mimic the behavior of MiniC\verb|++| as close as possible, all methods are defined as static methods.  
 
 \section{Source Code Generation}
 
 For the development of a compiler it is beneficial to implement a module for source code generation. The source code generation module takes the AST as input and generates MiniC\verb|++| source code. By generating source code from the AST, the correctness of the compiler frontend can be tested. If the code generated from the source code generator matches the original source code, it can be assumed that the AST has been correctly generated. When comparing there are some potential problems like formatting and comments. Therefore, it is best to take the generated source code and repeat the generation process one more time. The then generated source code can be used for comparison without any formatting or comments interfering. 
 
-The implementation of the source code generator uses a string builder combined with Kotlin extension functions. For each type of the AST there is a \verb|generateSourceCode| extension function which takes a string builder instance as the sole parameter. The extension functions are grouped according to their type into the following files:
+The implementation of the source code generator uses a StringBuilder combined with Kotlin extension functions. For each type of the AST, there is a \verb|generateSourceCode| extension function which takes a StringBuilder instance as the sole parameter. The extension functions are grouped according to their type into the following files:
 
 \begin{itemize}
-    \item \verb|BlockGenerator|
-    \item \verb|ConstVarDefGenerator|
-    \item \verb|ExprGenerator|
-    \item \verb|FuncGenerator|
-    \item \verb|MiniCppGenerator|
-    \item \verb|StatGenerator|
-    \item \verb|TypeGenerator|
+    \item \verb|BlockGenerator|,
+    \item \verb|ConstVarDefGenerator|,
+    \item \verb|ExprGenerator|,
+    \item \verb|FuncGenerator|,
+    \item \verb|MiniCppGenerator|,
+    \item \verb|StatGenerator| and
+    \item \verb|TypeGenerator|.
 \end{itemize}
 
-The code for the \verb|MiniCpp| AST node is shown in listing \ref{lst:SrcGenMiniCpp}. In this function the string builder is instantiated and eventually returned as a normal string. For each \verb|miniCppEntry| the respective \verb|generateSourceCode| function is called. The code to generate the \verb|ConstDef| node is shown in listing \ref{lst:SrcGenConstDef}. First the \verb|const| keyword is added to the string builder, followed by the source code for the type. Then all identifiers with their respective value are appended to the string builder. On the last entry the delimiter is omitted. 
+The code for the \verb|MiniCpp| AST node is shown in listing \ref{lst:SrcGenMiniCpp}. In this function, the String Builder is instantiated and eventually returned as a normal string. For each \verb|miniCppEntry| the respective \verb|generateSourceCode| function is called. The code to generate the \verb|ConstDef| node is shown in listing \ref{lst:SrcGenConstDef}. First, the \verb|const| keyword is added to the String Builder, followed by the source code for the type. Then all identifiers with their respective values are appended to the String Builder. On the last entry, the delimiter is omitted. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateSourceCode} method for the \texttt{MiniCpp} class., label=lst:SrcGenMiniCpp]
@@ -54,9 +54,9 @@ fun MiniCpp.generateSourceCode(): String {
         when (it) {
             is ConstDef -> it.generateSourceCode(sb)
             is FuncDecl -> it.generateSourceCode(sb)
-            is FuncDef -> it.generateSourceCode(sb)
-            Sem -> sb.appendLine(";")
-            is VarDef -> it.generateSourceCode(sb)
+            is FuncDef  -> it.generateSourceCode(sb)
+            Sem         -> sb.appendLine(";")
+            is VarDef   -> it.generateSourceCode(sb)
         }
     }
     return sb.toString()
@@ -72,7 +72,6 @@ fun ConstDef.generateSourceCode(sb: StringBuilder) {
     entries.forEachIndexed { index, entry ->
         sb.append("${entry.ident.name} = ")
         entry.value.generateSourceCode(sb)
-
         if (index != entries.lastIndex) {
             sb.append(", ")
         }
@@ -83,9 +82,9 @@ fun ConstDef.generateSourceCode(sb: StringBuilder) {
 
 \section{Classes}
 
-The first step when generating bytecode is to handle everything that is relevant on a class level. Every piece of code in Java is organized inside a class and stored inside a \verb|.class| file. For this task the ASM framework provides the \verb|ClassWriter| class. This class provides visitor-pattern based methods for generating a class file. The code for generating the class definition is shown in listing \ref{lst:BtGenClassDef}. The constructor for the \verb|ClassWriter| takes an integer parameter that functions as a flag which modifies the behavior of the class writer. In this case the \verb|COMPUTE_FRAMES| and  \verb|COMPUTE_MAXS| flags are used. \verb|COMPUTE_FRAMES| enables computation of stack map frames of methods from the bytecode. Further \verb|COMPUTE_MAXS| calculates the maximum stack size from the bytecode. Those two flags combined ease the development of the code generation since those two aspects are now computed automatically. Otherwise, it would be necessary to keep track of those values manually for every method generation, increasing complexity. 
+The first step when generating bytecode is to handle everything that is relevant on a class level. Every piece of code in Java is organized inside a class and stored inside a \verb|.class| file. For this task, the ASM framework provides the \verb|ClassWriter| class. This class provides visitor pattern based methods for generating a class file. The code for generating the class definition is shown in listing \ref{lst:BtGenClassDef}. The constructor for the \verb|ClassWriter| takes an integer parameter that functions as a flag which modifies the behavior of the class writer. In this case, the \verb|COMPUTE_FRAMES| and  \verb|COMPUTE_MAXS| flags are used. \verb|COMPUTE_FRAMES| enables the computation of stack map frames of methods from the bytecode. Further, \verb|COMPUTE_MAXS| calculates the maximum stack size from the bytecode. Those two flags combined ease the development of the code generation since those two aspects are now computed automatically. Otherwise, it would be necessary to keep track of those values manually for every method generation, increasing complexity. 
 
-The \verb|visit| method defines a class. The first parameter is the \verb|CLASS_FILE_VERSION| constant which has the value 65. This corresponds to Java Version 21. The second parameter defines the access flags of the class. \verb|ACC_PUBLIC| means that the class is public. The third parameter is the class name. The fourth parameter defines the signature of the class, which is only relevant for generic classes and therefore left as \verb|null|. The superclass is described by the fifth parameter. As the concept of classes does not exist in MiniC\verb|++| Java's default superclass \verb|java.lang.Object| is used as the superclass. Via the last parameter implemented interfaces can be defined. This parameter is also set to \verb|null| as MiniC\verb|++| does not support interfaces.
+The \verb|visit| method defines a class. The first parameter is the \verb|CLASS_FILE_VERSION| constant which has the value 65. This corresponds to Java version 21. The second parameter defines the access flags of the class. \verb|ACC_PUBLIC| means that the class is public. The third parameter is the class name. The fourth parameter defines the signature of the class, which is only relevant for generic classes and therefore left as \verb|null|. The superclass is described by the fifth parameter. As the concept of classes does not exist in MiniC\verb|++| Java's default superclass \verb|java.lang.Object| is used as the superclass. Via the last parameter, implemented interfaces can be defined. This parameter is also set to \verb|null| as MiniC\verb|++| does not support interfaces.
 
 \begin{KotlinCode}[float,numbers=none,caption=Code for the definition of a class., label=lst:BtGenClassDef]
 val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES + ClassWriter.COMPUTE_MAXS)
@@ -101,16 +100,17 @@ classWriter.visit(
 \end{KotlinCode}
 
 
-Once the class has been initialized, the bytecode generation based on the AST can begin. On the top level this process is shown in listing \ref{lst:BtGenTopLevelCode}. First a \verb|StaticVarDefGenerator| is instantiated. The same instance is used across the entire generation process, since the generation of static variable definitions requires the modification of the static class initializer block. Then for each \verb|miniCppEntry| the appropriate bytecode is generated. For \verb|Sem| and \verb|FuncDecl| no code needs to be generated, since they don't encode any semantic information relevant for bytecode. The \verb|addStaticScannerField| adds a scanner to the static variables. This is needed for the generation of \verb|cin| statements. To make the class executable a main method is needed. This is done via the \verb|addMainMethod| method. Calling the \verb|visitEnd| method of the \verb|classWriter| finished the code generation for the class. Finally, calling the \verb|toByteArray| method returns the bytecode of the generated class as a byte array. 
+Once the class has been initialized, the bytecode generation based on the AST can begin. On the top level, this process is shown in listing \ref{lst:BtGenTopLevelCode}. First, a \verb|StaticVarDefGenerator| is instantiated. The same instance is used across the entire generation process, since the generation of static variable definitions requires the modification of the static class initializer block. Then, for each \verb|miniCppEntry| the appropriate bytecode is generated. For \verb|Sem| and \verb|FuncDecl| no code needs to be generated, since they don't encode any semantic information relevant for bytecode. The \verb|addStaticScannerField| adds a scanner to the static variables. This is needed for the generation of \verb|cin| statements. To make the class executable, a main method is needed. This is done via the \verb|addMainMethod| method. Calling the \verb|visitEnd| method of the \verb|classWriter| finishes the code generation for the class. Finally, calling the \verb|toByteArray| method returns the bytecode of the generated class as a byte array. 
 
 \begin{KotlinCode}[float,numbers=none,caption=Top-level code for the bytecode generation., label=lst:BtGenTopLevelCode]
 val staticVarDefGenerator = StaticVarDefGenerator(classWriter)
 miniCpp.entries.forEach {
     when (it) {
-        is VarDef -> staticVarDefGenerator.generateStatic(it)
-        is ConstDef -> StaticConstDefGenerator(classWriter).generateStatic(it)
-        is FuncDef -> FuncDefGenerator(classWriter, miniCpp.className).generate(it)
-        is Sem, is FuncDecl -> ""
+       is VarDef   -> staticVarDefGenerator.generateStatic(it)
+       is ConstDef -> StaticConstDefGenerator(classWriter).generateStatic(it)
+       is FuncDef  -> FuncDefGenerator(classWriter, miniCpp.className).generate(it)
+       is Sem,
+       is FuncDecl -> ""
     }
 }
 staticVarDefGenerator.generateStaticInitBlock(miniCpp)
@@ -122,7 +122,7 @@ return classWriter.toByteArray()
 
 \section{Functions}
 
-A function in MiniC\verb|++| is translated into a class method in bytecode. The \verb|FuncGenerator| accepts a \verb|FuncDef| AST node and generates the bytecode for it. The code for the generation is shown in listing \ref{lst:BtGenFuncGen}. To generate code for a method a \verb|MethodVisitor| instance is needed. The visitor can be acquired by calling the \verb|visitMethod| method of the class writer. The parameter of the \verb|visitMethod| define the signature of the method to be generated. The first parameter defines the access of the method. \verb|ACC_PUBLIC| and \verb|ACC_STATIC| make it so that the method has the modifiers \verb|public| and \verb|static|. The second parameter is the name of the method. The third parameter defines the method's descriptor. The descriptor is a string representation of the input parameter types and the return type of the method. The fourth parameter describes the method's signature. This parameter is only needed for generics and thus can be set to \verb|null|. The final parameter is a string array containing all exceptions that the method may throw. Since  it is not possible in MiniC\verb|++| to write code that would cause a checked exception, this parameter can also be set to \verb|null|. 
+A function in MiniC\verb|++| is translated into a class method in bytecode. The \verb|FuncGenerator| accepts a \verb|FuncDef| AST node and generates the bytecode for it. The code for the generation is shown in listing \ref{lst:BtGenFuncGen}. To generate code for a method a \verb|MethodVisitor| instance is needed. The visitor can be acquired by calling the \verb|visitMethod| method of the class writer. The parameter of the \verb|visitMethod| defines the signature of the method to be generated. The first parameter defines the access of the method. \verb|ACC_PUBLIC| and \verb|ACC_STATIC| define that the method has the modifiers \verb|public| and \verb|static|. The second parameter is the name of the method. The third parameter defines the method's descriptor. The descriptor is a string representation of the input parameter types and the return type of the method. The fourth parameter describes the method's signature. This parameter is only needed for generics and thus can be set to \verb|null|. The final parameter is a string array containing all exceptions that the method may throw. Since  it is not possible in MiniC\verb|++| to write code that would cause a checked exception, this parameter can also be set to \verb|null|. 
 
 \begin{KotlinCode}[float,numbers=none,caption=Code for the bytecode generation of the \texttt{FuncDef} node., label=lst:BtGenFuncGen]
 fun generate(funcDef: FuncDef) {
@@ -144,17 +144,17 @@ fun generate(funcDef: FuncDef) {
 \end{KotlinCode}
 
 
-Listing \ref{lst:BtGenFuncGenDesc} shows the generation of the descriptor. The descriptor is generated using a string builder. The input parameter types are grouped inside parenthesis. \verb|void| or empty input parameters are represented as \verb|()|. For each input parameter it's type descriptor is added to the method descriptor. The following descriptors are relevant for the code generation from MiniC\verb|++|:
+Listing \ref{lst:BtGenFuncGenDesc} shows the generation of the descriptor. The descriptor is generated using a String Builder. The input parameter types are grouped inside parenthesis. \verb|void| or empty input parameters are represented as \verb|()|. For each input parameter it's type descriptor is added to the method descriptor. The following descriptors are relevant for the code generation from MiniC\verb|++|:
 
 \begin{itemize}
-    \item Void:           \verb|V|
-    \item Boolean:        \verb|Z|
-    \item Integer:        \verb|I|
-    \item Boolean Array: \verb|[Z|
-    \item Integer Array: \verb|[I|
+    \item Void:           \verb|V|,
+    \item Boolean:        \verb|Z|,
+    \item Integer:        \verb|I|,
+    \item Boolean Array: \verb|[Z| and
+    \item Integer Array: \verb|[I|.
 \end{itemize}
 
-Once the input parameters are added, the descriptor of the return type is appended after the closing parenthesis. For a method with an integer and boolean input parameter and a boolean return type the descriptor is \verb|(IZ)Z|.
+Once the input parameters are added, the descriptor of the return type is appended after the closing parenthesis. E.g., For a method with an integer and boolean input parameter and a boolean return type the descriptor is \verb|(IZ)Z|.
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Generation of the descriptor of a method., label=lst:BtGenFuncGenDesc]
@@ -171,15 +171,15 @@ fun FuncHead.getDescriptor(): String {
 }
 \end{KotlinCode}
 
-Listing \ref{lst:BtGenFuncGen} further shows the code generation for the method's body. The \verb|run| extension function changes the \verb|this| of the functions body to the \verb|methodVisitor|. With this the methods of it can be called without having to explicitly type \verb|methodVisitor|. To start the code generation the \verb|visitCode| method is called. All following visitor calls are then added to the method's body. The method's body is generated by the \verb|BlockGenerator|. The \verb|BlockGenerator| calls the respective code generators for each \verb|blockEntry|. Namely, the \verb|LocalVarDefGenerator| and the \verb|StatGenerator|. For constant definitions no code needs to be generated at the definition stage. Since every method needs a return instruction, even if the method's return type is \verb|void|, a return instruction is added after the \verb|BlockGenerator|. For normal instructions like \verb|RETURN| the \verb|visitInsn| method is used. The \verb|visitMaxs| method call sets the maximum stack size and maximum size of the local variables. Both are set to zero as the ASM framework computes the correct values based on the generated bytecode. To finish the code generation for the method the \verb|visidEnd| method is called.  
+Listing \ref{lst:BtGenFuncGen} further shows the code generation for the method's body. The \verb|run| extension function changes the \verb|this| of the functions body to the \verb|methodVisitor|. With this, the methods of it can be called without having to explicitly type \verb|methodVisitor|. To start the code generation the \verb|visitCode| method is called. All following visitor calls are then added to the method's body. The method's body is generated by the \verb|BlockGenerator|. The \verb|BlockGenerator| calls the respective code generators for each \verb|blockEntry|. Namely, the \verb|LocalVarDefGenerator| and the \verb|StatGenerator|. For constant definitions, no code needs to be generated at the definition stage. Since every method needs a return instruction, even if the method's return type is \verb|void|, a return instruction is added after the \verb|BlockGenerator|. For normal instructions like \verb|RETURN|, the \verb|visitInsn| method is used. The \verb|visitMaxs| method call sets the maximum stack size and maximum size of the local variables. Both are set to zero as the ASM framework computes the correct values based on the generated bytecode. To finish the code generation for the method the \verb|visidEnd| method is called.  
 
 \section{Static Fields}
 
-Variable definitions of MiniC\verb|++| are converted into static variables inside the class. Constant definitions are added into the constant pool. When a constant variable is referenced inside the bytecode, the value from the constant pool is loaded. 
+Variable definitions of MiniC\verb|++| are converted to static variables inside the class. Constant definitions are added to the constant pool. When a constant variable is referenced inside the bytecode, the value from the constant pool is loaded. 
 
 \subsection{Constant Definitions}
 
-Constant definitions are handled by the \verb|StaticConstDefGenerator| class. Its source code is visible in listing \ref{lst:BtGenConstDefGen}. The generator takes the \verb|ClassWriter| instance as a constructor argument, so that the constant pool can be accessed. In the \verb|generateStatic| method, a \verb|ConstDef| node is accepted and processed. ASM provides the \verb|newConst| method that creates an entry in the constant pool of the class and returns the index of the value in it. If an entry with the same value already exists, its index is returned instead. For all \verb|constDefEntry| elements this method is called, and the index is stored in the variable associated with it. When the constant is later referenced, the index can be used to put the value on the operand stack.
+Constant definitions are handled by the \verb|StaticConstDefGenerator| class. Its source code is visible in listing \ref{lst:BtGenConstDefGen}. The generator takes the \verb|ClassWriter| instance as a constructor argument, so that the constant pool can be accessed. In the \verb|generateStatic| method, a \verb|ConstDef| node is accepted and processed. ASM provides the \verb|newConst| method that creates an entry in the constant pool of the class and returns the index of the value in it. If an entry with the same value already exists, its index is returned instead. For all \verb|constDefEntry| elements this method is called, and the index is stored in the variable associated with it. When the constant is referenced later, the index can be used to put the value on the operand stack.
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Code of the \texttt{StaticConstDefGenerator} class., label=lst:BtGenConstDefGen]
@@ -196,9 +196,9 @@ fun generateStatic(constDef: ConstDef) {
 
 \subsection{Variable Definitions}
 
-The \verb|StaticVarDefGenerator| class generates the code for static variable definitions. In bytecode the declaration and initialization are split up. First the field is defined and then later in the static initializer block of the class, a value is assigned to it.
+The \verb|StaticVarDefGenerator| class generates the code for static variable definitions. In bytecode, the declaration and initialization are split up. First, the field is defined and then later in the static initializer block of the class, a value is assigned to it.
 
-Listing \ref{lst:BtGenStatVarDecl} shows the code for the declaration of a static variable. The \verb|ClassWriter| method \verb|visitField| declares the variable. The first parameter defines the access flags, in this case all variables are \verb|public| and \verb|static|. The second parameter defines the name of the variable. Contrary to local variables which use indexes, static variables are referenced by their name. The type of the variable is defined by the third parameter. For this the type descriptor is used. The fourth parameter handles the variable's signature. It can be set to \verb|null|, because no generics are used. The final parameter sets the value of the field. This field is only relevant for \verb|final| variables, whose value cannot change. Each \verb|VarDef| node is also added to the \verb|generatedVarDefs| list, which is used for the initialization.
+Listing \ref{lst:BtGenStatVarDecl} shows the code for the declaration of a static variable. The \verb|ClassWriter| method \verb|visitField| declares the variable. The first parameter defines the access flags, in this case all variables are \verb|public| and \verb|static|. The second parameter defines the name of the variable. Contrary to local variables which use indexes, static variables are referenced by their name. The type of the variable is defined by the third parameter. For this, the type descriptor is used. The fourth parameter handles the variable's signature. It can be set to \verb|null|, because no generics are used. The final parameter sets the value of the field. This field is only relevant for \verb|final| variables, whose value cannot change. Each \verb|VarDef| node is also added to the \verb|generatedVarDefs| list, which is used for the initialization.
 
 
 
@@ -218,9 +218,9 @@ fun generateStatic(varDef: VarDef) {
 }
 \end{KotlinCode}
 
-The initialization is performed by the code shown in listing \ref{lst:BtGenStatVarInit}. First the method visitor for the static initializer block is acquired by calling the \verb|visitMethod| method. The name of the static initializer block is predefined with \verb|<clinit>| and the method has no parameters and the \verb|void| return type. For each \verb|VarDef| entries with no default value are filtered. For each entry its default value is pushed onto the operand stack as a constant using the \verb|visitLdcInsn| method. The \verb|visitFieldInsn| method then pops the value from the operand stack and assigns it to the static variable. The first parameter of the method is the operand code. \verb|PUTSTATIC| is the operand code for assigning a new value to a static variable. The second parameter describes the owner of the variable, in this case it is the current class name. The third parameter is the identifier and the final one the descriptor of the variable type.
+The initialization is performed by the code shown in listing \ref{lst:BtGenStatVarInit}. First, the method visitor for the static initializer block is acquired by calling the \verb|visitMethod| method. The name of the static initializer block is predefined with \verb|<clinit>| and the method has no parameters and the \verb|void| return type. For all \verb|VarDef| entries with no default, values are filtered. For each entry its default value is pushed onto the operand stack as a constant using the \verb|visitLdcInsn| method. The \verb|visitFieldInsn| method then pops the value from the operand stack and assigns it to the static variable. The first parameter of the method is the operand code. \verb|PUTSTATIC| is the operand code for assigning a new value to a static variable. The second parameter describes the owner of the variable, in this case it is the current class name. The third parameter is the identifier and the final one the descriptor of the variable type.
 
-The \verb|visitScannerInit| method initializes the scanner which is used to read input from the console. First the method ensures that the name for the scanner variable is not taken by looking through all scopes. Then an instance of the scanner is initialized. To invoke the constructor the op code \verb|INVOKESPECIAL| is used.
+The \verb|visitScannerInit| method initializes the scanner which is used to read input from the console. First, the method ensures that the name for the scanner variable is not taken by looking through all scopes. Then, an instance of the scanner is initialized. To invoke the constructor the op code \verb|INVOKESPECIAL| is used.
 
 %potentially code for scanner
 
@@ -257,9 +257,9 @@ fun generateStaticInitBlock(miniCpp: MiniCpp) {
 
 \section{Local Variables}
 
-MiniC\verb|++| supports local variables and constant definitions. The latter one are handled in the same way as the global constant definitions by the \verb|ConstDefGenerator|. For each constant definition an entry is created in the constant pool of the class. When the constant definition is referenced, the constant's value is pushed onto the operand stack from the constant pool.
+MiniC\verb|++| supports local variables and constant definitions. The latter one are handled in the same way as the global constant definitions by the \verb|ConstDefGenerator|. For each constant definition, an entry is created in the constant pool of the class. When the constant definition is referenced, the constant's value is pushed onto the operand stack from the constant pool.
 
-The \verb|LocalVarDefGenerator| generates the code for local variable definitions. The relevant bytecode is generated by the code shown in listing \ref{lst:BtGenVarDef}. First, for each entry the type is optionally converted to a pointer type, if the flag is set. Then the \verb|pushInitValue| method takes the entry's value and pushes it onto the stack. In case the value is null, the respective default value of the type is pushed onto the stack. The \verb|storeVariable| method then stores the value from the stack in the variable. For this the variable type and index is needed. Depending on the type of the variable a different opcode needs to be generated. The bytecode instruction is generated by the \verb|visitVarInsn| method, which takes the opcode and the index of the variable as a parameter. 
+The \verb|LocalVarDefGenerator| generates the code for local variable definitions. The relevant bytecode is generated by the code shown in listing \ref{lst:BtGenVarDef}. First, for each entry the type is optionally converted to a pointer type, if the flag is set. Then the \verb|pushInitValue| method takes the entry's value and pushes it onto the stack. In case the value is null, the respective default value of the type is pushed onto the stack. The \verb|storeVariable| method then stores the value from the stack in the variable. For this, the variable type and index is needed. Depending on the type of the variable, a different opcode needs to be generated. The bytecode instruction is generated by the \verb|visitVarInsn| method, which takes the opcode and the index of the variable as a parameter. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Code for the definition of local variables., label=lst:BtGenVarDef]
@@ -273,9 +273,9 @@ fun generate(varDef: VarDef) {
 
 private fun storeVariable(type: ExprType, index: Int) {
     val opCode = when (type) {
-        ExprType.INT -> ISTORE
+        ExprType.INT  -> ISTORE
         ExprType.BOOL -> ISTORE
-        else -> ASTORE
+        else          -> ASTORE
     }
     mv.visitVarInsn(opCode, index)
 }
@@ -283,7 +283,7 @@ private fun storeVariable(type: ExprType, index: Int) {
 
 \section{Statments}
 
-Statements are generated by the \verb|StatGenerator| class. When generating a statement first the appropriate generation method for the specific type of statement is chosen. This is done by the \verb|generate| method of the \verb|StatGenerator| shown in listing \ref{lst:BtGenStatGen}. Depending on the complexity of the statement, the code is generated by another generator, e.g. the \verb|OutputStatGenerator|. The \verb|BreakStat| requires just one instruction and is thus generated directly in the method. The \verb|EmptyStat| does not lead to the generation of any bytecode and is ignored. 
+Statements are generated by the \verb|StatGenerator| class. When generating a statement, first the appropriate generation method for the specific type of statement is chosen. This is done by the \verb|generate| method of the \verb|StatGenerator| shown in listing \ref{lst:BtGenStatGen}. Depending on the complexity of the statement, the code is generated by another generator, e.g., the \verb|OutputStatGenerator|. The \verb|BreakStat| requires just one instruction and is thus generated directly in the method. The \verb|EmptyStat| does not lead to the generation of any bytecode and is ignored. 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generate} method of the \texttt{StatGenerator}., label=lst:BtGenStatGen]
 fun generate(stat: Stat, breakLabel: Label?) {
@@ -304,7 +304,7 @@ fun generate(stat: Stat, breakLabel: Label?) {
 
 \subsection{If Statement}
 
-An if statement is generated by the \verb|generateIfStat| method shown in listing \ref{lst:BtGenIfStatGen}. First, two labels are created. Bytecode uses labels as the target for its \verb|GOTO| instructions. For if statements two labels are needed, one for the else branch and one to mark the end of the statement. Then the bytecode for the if statement's condition is generated by the \verb|ExprGenerator|. The jump instruction \verb|IFEQ| then checks if top value on the stack is equal to zero. If this is the case, a jump to the \verb|elseLabel| is performed. Otherwise, the execution proceeds to the next instruction. The code for the \verb|thenStat| is generated by the \verb|generate| method of the \verb|StatGenerator|. After that a jump to the end of the statement is performed. This is done, because the else branch of the if statement is generated after the then branch and thus needs to be skipped. If an else branch is present, the bytecode for it is generated in the same way.
+An if statement is generated by the \verb|generateIfStat| method shown in listing \ref{lst:BtGenIfStatGen}. First, two labels are created. Bytecode uses labels as the target for its \verb|GOTO| instructions. For if statements, two labels are needed, one for the else branch and one to mark the end of the statement. Then the bytecode for the if statement's condition is generated by the \verb|ExprGenerator|. The jump instruction \verb|IFEQ| then checks if the top value on the stack is equal to zero. If this is the case, a jump to the \verb|elseLabel| is performed. Otherwise, the execution proceeds to the next instruction. The code for the \verb|thenStat| is generated by the \verb|generate| method of the \verb|StatGenerator|. After that, a jump to the end of the statement is generated. This is done, because the else branch of the if statement is generated after the then branch and thus needs to be skipped. If an else branch is present, the bytecode for it is generated in the same way.
 
 
 
@@ -325,7 +325,7 @@ private fun generateIfStat(stat: IfStat, breakLabel: Label?) {
 
 \subsection{Delete Statement}
 
-The delete statement causes the reference to the array to be set to null. Reclaiming memory in the same way as \verb|C++| is not possible in the JVM. The bytecode generation for the delete statement is shown in figure \ref{lst:BtGenDeleteStatGen}. First, the variable associated with the identifier specified in the delete statement is retrieved. The \verb|ACONST_NULL| opcode pushes a \verb|null| value onto the stack. With the \verb|ASTORE| opcode the value is then popped from the stack and assigned to the array variable. 
+The delete statement causes the reference to the array to be set to null. Reclaiming memory in the same way as in \verb|C++| is not possible in the JVM. The bytecode generation for the delete statement is shown in figure \ref{lst:BtGenDeleteStatGen}. First, the variable associated with the identifier specified in the delete statement is retrieved. The \verb|ACONST_NULL| opcode pushes a \verb|null| value onto the stack. With the \verb|ASTORE| opcode the value is then popped from the stack and assigned to the array variable. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateDeleteStat} method of the \texttt{StatGenerator}., label=lst:BtGenDeleteStatGen]
@@ -338,7 +338,7 @@ private fun generateDeleteStat(stat: DeleteStat) {
 
 \subsection{Input Statement}
 
-The input statement reads a value from the console and then assigns that value to a variable. To read a value from the console the static \verb|Scanner| instance is used. The code implementing the input statement is shown in listing \ref{lst:BtGenInputStatGen}. The scanner is loaded with the \verb|GETSTATIC| opcode, and it's owner, name and descriptor. The method of the scanner that should be called depends on the type of the variable. To invoke a method of an object the \verb|INVOKEVIRTUAL| opcode is needed. The method visitor generates method invocations using the \verb|visitMethodInsn| method. In addition to the opcode, the qualified name of the scanner, method name, descriptor and a boolean value indicating if an interface is invoked, are needed. Finally, the value put onto the stack by the scanner is stored. In case the variable is static, the \verb|visitFieldInsn| method is used to store the value with the \verb|PUTSTATIC| opcode. The \verb|visitVarInsn| method in combination with the \verb|ISTORE| opcode, stores the value for a local variable. 
+The input statement reads a value from the console and then assigns that value to a variable. To read a value from the console, the static \verb|Scanner| instance is used. The code implementing the input statement is shown in listing \ref{lst:BtGenInputStatGen}. The scanner is loaded with the \verb|GETSTATIC| opcode, and it's owner, name and descriptor. The method of the scanner, that should be called, depends on the type of the variable. To invoke a method of an object, the \verb|INVOKEVIRTUAL| opcode is needed. The method visitor generates method invocations using the \verb|visitMethodInsn| method. In addition to the opcode, the qualified name of the scanner, method name, descriptor and a boolean value indicating if an interface is invoked, are needed. Finally, the value put onto the stack by the scanner is stored. In case the variable is static, the \verb|visitFieldInsn| method is used to store the value with the \verb|PUTSTATIC| opcode. The \verb|visitVarInsn| method in combination with the \verb|ISTORE| opcode, stores the value for a local variable. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateInputStat} method of the \texttt{StatGenerator}., label=lst:BtGenInputStatGen]
@@ -369,7 +369,7 @@ private fun generateInputStat(stat: InputStat) {
 
 \subsection{While Statement}
 
-Listing \ref{lst:BtGenWhileStatGen} shows the code for the generation of a while statement. A while statement requires two labels. One for the start and one for the end of the statement. The start label is marked with the \verb|visitLabel| method of the method visitor. Then condition's bytecode is generated by the \verb|ExprGenerator|. The condition is then checked with the \verb|IFEQ| opcode that jumps to the specified label in the case the condition matches the value zero. If the condition is true, the body of the while statement is executed. It is generated by the \verb|generate| method of the \verb|StatGenerator|. The \verb|endLabel| is passed as a parameter. In the case that somewhere in the statement's body a \verb|break| statement is defined, it will jump to this label. At the end of the statement's body the loop is repeated by jumping to the \verb|startLabel| with the \verb|GOTO| opcode. The \verb|endLabel| is visited after the jump instruction. 
+Listing \ref{lst:BtGenWhileStatGen} shows the code for the generation of a while statement. A while statement requires two labels. One for the start and one for the end of the statement. The start label is marked with the \verb|visitLabel| method of the method visitor. Then, the condition's bytecode is generated by the \verb|ExprGenerator|. The condition is then checked with the \verb|IFEQ| opcode that jumps to the specified label in the case the condition matches the value zero. If the condition is true, the body of the while statement is executed. It is generated by the \verb|generate| method of the \verb|StatGenerator|. The \verb|endLabel| is passed as a parameter. In the case that somewhere in the statement's body a \verb|break| statement is defined, it will jump to this label. At the end of the statement's body the loop is repeated by jumping to the \verb|startLabel| with the \verb|GOTO| opcode. The \verb|endLabel| is visited after the jump instruction. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{generateInputStat} method of the \texttt{StatGenerator}., label=lst:BtGenWhileStatGen]
@@ -387,7 +387,7 @@ private fun generateWhileStat(stat: WhileStat) {
 
 \subsection{Output Statement}
 
-Output statements are handled by the \verb|OutputStatGenerator| which generates the bytecode for \verb|System.out.print| and \verb|System.out.println| calls. An output statement consists of one or more \verb|outputStatEntry| elements, which can be an expression, a string literal or and end line token. Before the code generation for each type, the \verb|System.out| static field is loaded. For an expression, it's bytecode is generated by the \verb|ExprGenerator|. The descriptor for the \verb|print| method is decided based on the type of the expression. The descriptor is then passed on to the \verb|generatePrint| method, which generated bytecode for the \verb|print| method invocation. The qualified name of the \verb|out| print stream is \texttt{java/io/PrintStream}. To print a stream literal, its value is put onto the stack using the \verb|visitLdcInsn| method. To print a string the \verb|generatePrint| method must be passed the descriptor of the \verb|String| type, which is \texttt{(Ljava/lang/String;)V}. 
+Output statements are handled by the \verb|OutputStatGenerator| which generates the bytecode for \verb|System.out.print| and \verb|System.out.println| calls. An output statement consists of one or more \verb|outputStatEntry| elements, which can be expressions, string literals or end of line token. Before the code generation for each type, the \verb|System.out| static field is loaded. For an expression, it's bytecode is generated by the \verb|ExprGenerator|. The descriptor for the \verb|print| method is selected based on the type of the expression. The descriptor is then passed on to the \verb|generatePrint| method, which generated bytecode for the \verb|print| method invocation. The qualified name of the \verb|out| print stream is \texttt{java/io/PrintStream}. To print a stream literal, its value is put onto the stack using the \verb|visitLdcInsn| method. To print a string, the \verb|generatePrint| method must be passed the descriptor of the \verb|String| type, which is \texttt{(Ljava/lang/String;)V}. 
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Code for the print generation methods of the \texttt{OutputStatGenerator}., label=lst:BtGenOutputStatGen]
