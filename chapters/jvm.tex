@@ -80,13 +80,19 @@ The class loaders are organized in a parent-child hierarchy. The Bootstrap class
 
 In the loading stage the bytecode is loaded into the JVM. The bytecode can be loaded from a file, the network or another source. The bytecode is loaded into the JVM as a \texttt{Class} object.
 
-In the second stage, linking is performed. This stage is separated into the three substages: verification, preparation and resolution. Verification ensures that the loaded bytecode adheres to the JVM's rules. These rules include e.g., that a return expression's type must match its method's return type, or that a \texttt{throw} instruction must only throw objects that are instances or subclasses of \texttt{Throwable}. Verification is performed because the JVM must guarantee that only correct \texttt{class} files are executed and no exploitation through malicious bytecode is taking place. The second substage creates the static fields of a class or interface and allocates the memory needed for them. The static fields further are assigned their respective default values. Explicit initializers are executed during initialization, during preparation no bytecode is executed. Resolution then resolves all symbolic references inside the class. Symbolic references are used for example when referencing another class or interface. For each symbolic reference resolution determines a concrete value. 
+In the second stage, linking is performed. This stage is separated into the three substages: verification, preparation and resolution. 
+\begin{itemize}
+    \item Verification ensures that the loaded bytecode adheres to the JVM's rules. These rules include e.g., that a return expression's type must match its method's return type, or that a \texttt{throw} instruction must only throw objects that are instances or subclasses of \texttt{Throwable}. Verification is performed because the JVM must guarantee that only correct \texttt{class} files are executed and no exploitation through malicious bytecode is taking place.
+    \item Preparation creates the static fields of a class or interface and allocates the memory needed for them. The static fields further are assigned their respective default values. Explicit initializers are executed during initialization, during preparation no bytecode is executed. 
+    \item Resolution then resolves all symbolic references inside the class. Symbolic references are used for example when referencing another class or interface. For each symbolic reference resolution determines a concrete value. 
+\end{itemize}
+ 
+If linking has been successful the class or interface is initialized in the initialization stage. Explicit initializers of static fields are executed as are static initializer blocks of the class or interface.
 
-If linking has been successful the class or interface is initialized. Explicit initializers of static fields are executed as are static initializer blocks of the class or interface.
 
 \subsection{Runtime Data Areas}
 
-The runtime data areas of the JVM are regions of memory used during the execution of a program. Each memory area serves a specific purpose. Some memory areas are specific to a thread. They get created when a thread is instantiated and cleaned up on thread termination. Others are alive for the entire duration of the JVM's runtime.  
+The runtime data areas of the JVM are regions of memory used during the execution of a program. Each memory area serves a specific purpose. Some memory areas are specific to a thread. They get created when a thread is instantiated and reclaimed on thread termination. Others are alive for the entire duration of the JVM's runtime.  
 
 \subsubsection{PC Register}
 
@@ -170,7 +176,7 @@ Bytecode is the instruction set of the JVM. It serves as an intermediate languag
 
 In terms of code execution, JVM is organized as a stack machine with registers. Each method being executed is structured as a frame containing an operand stack and local variables, which can be seen as registers. The operand stack and number of variables inside a frame are each able to contain up to 65535 entries.
 
-A bytecode instruction consists of a one byte long opcode followed by zero or more one byte long operands. The maximum possible number of opcodes is therefore 256. Most of them are in use, while some are reserved for internal and future use. Each instruction has a mnemonic associated with it. Instructions that can operate on multiple types are prefixed by the concrete type they are operating on. For example the instruction for adding together two integers is known by the mnemonic \texttt{iadd}. The following types are supported in bytecode:
+A bytecode instruction consists of a one byte long opcode followed by zero or more one byte long operands. The maximum possible number of opcodes is therefore 256. Most of them are in use, while some are reserved for internal and future use. Each instruction has a mnemonic associated with it. Instructions that can operate on multiple types are prefixed by the concrete type code (e.g, i for interger, l for long) they are operating on. For example the instruction for adding together two integers is known by the mnemonic \texttt{iadd}. The following types are supported in bytecode:
 
 \begin{itemize}
     \item \texttt{boolean},
@@ -220,7 +226,7 @@ In some cases it is beneficial to perform manipulations on the operand stack dir
 By using control transfer instructions, the execution path can be changed to continue with an instruction other than the one after the control transfer instruction. Labels are used to specify where the execution should continue. There are three kinds of control transfer instructions available:
 
 \begin{enumerate}
-    \item \textbf{Unconditional Branch}: Instructions like \texttt{goto} are used to jump to a label that may be before or after the instruction itself. 
+    \item \textbf{Unconditional Branch}: Bytecode instructions like \texttt{goto} are used to jump to a label that may be before or after the instruction itself. 
     \item \textbf{Conditional Branch}: If a condition is met, the execution jumps to the instruction specified by a label. The label is provided as an operand to the conditional instruction. If the condition is not met, the following instruction is executed. For example, the instruction \texttt{ifnull} checks whether a value on the operand stack equals null or not.
     \item \textbf{Compound Conditional Branch}: The instructions \texttt{tableswitch} and \break \texttt{lookupswitch} allow for multi-way branching, which are available as \texttt{switch} statements in Java. Depending on the case values one of those two instructions is used. \texttt{tableswitch} is optimized for dense case values, while \texttt{lookupswitch} is preferred for sparse ones.
     
@@ -266,7 +272,7 @@ The basis for the following section is the official Website of the ObjectWeb ASM
 
 ASM is used in various projects to take care of the bytecode interaction. For example, OpenJDK uses ASM to generate lambda call sites \parencite{OpenJdk2024}. ASM is also used in compilers that produce Java bytecode like the Kotlin compiler \parencite{Kotlin2024}. 
 
-ASM offers a visitor-pattern based API for generating bytecode. There is also the possibility to construct an explicit tree via the tree API. The tree API is however just a wrapper around the already existing visitor-pattern. The visitor-pattern offers the advantage of not having to construct an explicit tree, which makes writing code to generate the bytecode more flexible. ASM operates directly on the bytecode which enables its efficiency.     
+ASM offers a visitor-pattern based API for generating bytecode. There is also the possibility to construct an explicit tree via the so-called tree API. The tree API is however just a wrapper around the already existing visitor-pattern. The visitor-pattern offers the advantage of not having to construct an explicit tree, which makes writing code to generate the bytecode more flexible. ASM operates directly on the bytecode which enables its efficiency.     
 
 \subsection{Functionality}
 
@@ -299,3 +305,7 @@ mv.visitVarInsn(Opcodes.ISTORE, 3);
 
 mv.visitInsn(Opcodes.RETURN);
 \end{JavaCode}
+
+\section{Summary}
+
+This chapter explained the architecture and functionality of the JVM. The JVM understand and executes the so-called bytecode instruction set. Bytecode is stored inside \verb|class| files. To generate bytecode the library ObjectWeb ASM can be used. It offers a visitor-pattern based API to generate bytecode. The following chapter, focuses on the frontend implementation of the MiniC\verb|++| compiler.

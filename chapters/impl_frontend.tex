@@ -33,7 +33,7 @@ At the top of the grammar file, the name of the grammar is specified. In this ca
 
 The grammar contains three terminal classes shown in listing \ref{lst:ANTLRMiniCppTermClass}. The \texttt{IDENT} terminal class is used for all identifiers and requires them to start with a letter followed by an arbitrary number of letters and/or digits. For integer numbers the \texttt{INT} terminal class specifies a sequence of one or more decimal digits. Signs are handled in the parser rules. Strings are defined as a sequence of characters starting and ending with double quotes. All characters except the special characters for end of line are allowed. The comment and whitespace handling is performed by the \texttt{WS}, \verb|LINE_COMMENT| and \verb|BLOCK_COMMENT| lexical rules. These are special rules that, when matched, tell the parser to skip them and therefore not include them in the syntax tree. 
 
-\begin{AntlrCode}[float,numbers=none,caption=Terminal classes of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTermClass]
+\begin{AntlrCode}[float,numbers=none,caption=Terminal classes\texttt{,} whitespace and comments of the MiniC\texttt{++} ANTLR grammar., label=lst:ANTLRMiniCppTermClass]
 IDENT:          [a-zA-Z_][a-zA-Z_0-9]*;
 INT:            [0-9]+;
 STRING:         '"' (~[\r\n"] | '""')* '"';
@@ -45,7 +45,7 @@ BLOCK_COMMENT:  '/*' .*? '*/' -> skip;
 
 \subsection{Root}
 
-The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. The root rule \texttt{miniCpp} contains zero or more elements of the rule \texttt{miniCppEntry} followed by the lexical rule \texttt{EOF}. \texttt{EOF} is a default lexical rule provided by ANTLR signaling the end of the file. \texttt{miniCppEntry} defines the elements that can be used at the top level of the miniC\verb|++| source file. These are variable and constant definitions, function declarations and definitions. \texttt{SEM} is the lexical rule defining a semicolon. 
+The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. The root rule \texttt{miniCpp} contains zero or more elements of the rule \texttt{miniCppEntry} followed by the terminal symbol \texttt{EOF}. \texttt{EOF} is a default terminal symbol provided by ANTLR signaling the end of the file. \texttt{miniCppEntry} defines the elements that can be used at the top level of the miniC\verb|++| source file. These are variable and constant definitions, function declarations and definitions. \texttt{SEM} is the lexical rule defining a semicolon. 
 
 \begin{AntlrCode}[float,numbers=none,caption=Top rules of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTop]
 miniCpp:     (miniCppEntry)* EOF;
@@ -207,7 +207,7 @@ The AST nodes for expressions follow a similar pattern. The hierarchy is similar
 
 \section{Symbol Table}
 
-Besides the AST, a symbol table is needed for the management of the variables and functions of the program. For variables, it is necessary to keep track of their lifetime and shadowing, in case the same variable name is used twice. Since MiniC\verb|++| supports function overloading, each overload of a function needs to be accounted for, so that during the bytecode generation the correct function is called. The \verb|Scope| class is responsible for both variables and functions. It stores information about all variables and functions declared in the current scope. Every time the scope changes, e.g., when a function defintion is entered, a new \verb|Scope| instance is created. Each \verb|Scope| instance stores a reference to its parent. This reference is used when a variable or function defined in the parent scope needs to be accessed. Only the root instance does not have a parent scope. In this scope, functions and global variables are defined.
+Besides the AST, a symbol table is needed for the management of the variables and functions of the program. For variables, it is necessary to keep track of their lifetime and shadowing, in case the same variable name is used twice. Since MiniC\verb|++| supports function overloading, each overload of a function needs to be accounted for, so that during the bytecode generation the correct function is called. The \verb|Scope| class is responsible for both variables and functions. It stores information about all variables and functions declared in the current scope. Every time the scope changes, e.g., when a function definition is entered, a new \verb|Scope| instance is created. Each \verb|Scope| instance stores a reference to its parent. This reference is used when a variable or function defined in the parent scope needs to be accessed. Only the root instance does not have a parent scope. In this scope, functions and global variables are defined.
 
 \subsection{Variables}
 
@@ -311,7 +311,7 @@ fun generateASTForFileVisitor(inputStream: InputStream, className: String): Mini
 
 \section{Listener Implementation}
 
-The listener implementation generates the AST during parse process of the syntax tree. Every time, a node is entered and exited, listener methods are called which build up the AST. The listener implementation follows a similar pattern to the visitor implementation in that it creates a separate listener for each type of the AST. Similar to the \verb|minicppBaseVisitor|, ANTLR also generates a \verb|minicppBaseListener| class. This class contains empty implementations for all listener methods. Only the methods relevant for a specific AST node then need to be overridden. For each node in the syntax tree, there is an \verb|enter| and \verb|exit| method, suffixed by the node's name. The \verb|enter| methods also include the context object as an input parameter, however since the node has not been fully parsed yet, no data can be extracted. 
+The listener implementation generates the AST during parse process of the syntax tree. Every time, the parsing of a node is begun and finished, listener methods are called which build up the AST. The listener implementation follows a similar pattern to the visitor implementation in that it creates a separate listener for each type of the AST. Similar to the \verb|minicppBaseVisitor|, ANTLR also generates a \verb|minicppBaseListener| class. This class contains empty implementations for all listener methods. Only the methods relevant for a specific AST node then need to be overridden. For each node in the syntax tree, there is an \verb|enter| and \verb|exit| method, suffixed by the node's name. The \verb|enter| methods also include the context object as an input parameter, however since the node has not been fully parsed yet, no data can be extracted. 
 
 The listener for the \verb|MiniCpp| AST node is shown in listing \ref{lst:ListenerMiniCpp}. The constructor of the \verb|MiniCppListener| requires an instance of the \verb|MiniCppEntryListener|. Via this reference, the parsed \verb|miniCppEntry| elements are retrieved. The \verb|exitMiniCpp| method sets the variable \verb|result| which stores the root node of the AST. This variable is used to pass the AST to the rest of program once it has been parsed.
 
@@ -473,7 +473,7 @@ initOption:
     \end{AntlrCode}
 
 
-The execution of the ATG functions in the same way as for the visitor-implementation in listing \ref{lst:VisitorExec}. The parser is executed by calling the \verb|miniCpp| method. Once this method has finished executing, the generated AST can be retrieved via the \verb|result| variable of the parser. 
+The execution of the ATG works in the same way as for the visitor-implementation in listing \ref{lst:VisitorExec}. The parser is executed by calling the \verb|miniCpp| method. Once this method has finished executing, the generated AST can be retrieved via the \verb|result| variable of the parser. 
 
 
 \section{Detection of Semantic Errors}
@@ -488,7 +488,8 @@ fun performErrorHandling(joinPoint: ProceedingJoinPoint): Any {
     } catch (e: SemanticException) {
         val ctx = joinPoint.args.first() as ParserRuleContext
         if (previousException != e) {
-            System.err.println("Error on line ${ctx.start.line}:${ctx.start.charPositionInLine} : ${e.message}")
+            System.err.println("Error on line ${ctx.start.line}:"
+            + "${ctx.start.charPositionInLine} : ${e.message}")
         }
 
         previousException = e
@@ -501,3 +502,7 @@ fun performErrorHandling(joinPoint: ProceedingJoinPoint): Any {
     }
 }
 \end{KotlinCode}
+
+\section{Summary}
+
+In this chapter, the three implementations of the frontend were explained. All implementations are based of the MIniC\verb|++| ANTLR grammar. Based on the grammar an AST was designed. The visitor and listener implementation both use Kotlin as the host language, while the ATG implementation relies on Java. In the following chapter the implementation of the backend is explained.

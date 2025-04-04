@@ -1,0 +1,33 @@
+\chapter{Summary and Experiences}
+
+This chapter presents a summary of this master thesis. Further, personal experiences and reflections are given. 
+
+\section{Summary}
+
+In the beginning of this thesis, the theoretical fundamentals required for compiler construction are laid out. The thesis explains the concept of formal languages and how they are relevant for compiler construction. A definition of formal grammars is given. Formal grammars can be specified with the Chomsky hierarchy. For compiler construction, regular and context-free grammars are relevant. Further, the task of a compiler is explained. In multiple steps, the compiler transforms code of a source language into code of a target language.
+
+The following chapter discusses methods and tools for compiler frontends. A compiler frontend usually generates an abstract syntax tree (AST). This master thesis uses the combined lexer and parser generator ANTLR. Based on a grammar, ANTLR generates a parser that is based on the ALL(*) parsing algorithm. With this parser the AST is generated. ANTLR offers three ways to generate an AST: via the visitor-pattern, via the listener-pattern and via an attributed grammar (ATG). For each implementation method, an example is given. 
+
+The third chapter focuses on the Java Virtual Machine (JVM) and the bytecode generation library ObjectWeb ASM. The JVM is the virtual machine on which Java programs are executed. Java source code is compiled to bytecode, which is the instruction set of the JVM. Bytecode is stored inside a \verb|class| file. Further, the architecture of the JVM, bytecode, and the \verb|class| file format are explained. The master thesis uses ObjectWeb ASM to generate the bytecode. The library offers a visitor-pattern based API to for bytecode generation. 
+
+The next chapter explains the implementation of the frontend. First, the used technologies are laid out then the ANTLR grammar for MiniC\verb|++| is presented. Alongside the grammar, the AST is explained. Based on this grammar a parser is generated. The parser is used in combination with the visitor and listener pattern to create two implementations of the AST generation. The third implementation uses an ATG to generate the AST. All implementations use the same symbol table which is included in the AST.
+
+The following chapter continues with an explanation of the backend. First, the differences between Java and C\verb|++|, and how they affect the implementation were laid out. This is followed by a section regarding the source code generation. The bytecode generation was implemented using the ObjectWeb ASM bytecode generation library. For each node of the AST, the bytecode generation was shown.  
+
+In the MiniC\verb|++| compiler chapter, the structure of the compiler console application is explained. The console parameters of the application were shown. With this application, several tests were performed to confirm the functionality of the compiler. 
+
+The last chapter compared the three different AST-generation methods implemented in this thesis. The three implementations were compared in terms of ease of use, maintainability and performance. For the performance both runtime and memory consumption were evaluated. The overall recommendation is to use the visitor-pattern because of it is easy to understand, and it offers more flexibility and better maintainability than the other implementations.
+
+\section{Personal Experiences}
+
+Implementing a compiler from scratch proved to be a challenging but very worthwhile experience. The compiler construction and formal languages class, provided a great fundament for the development of a compiler. Thanks to this class, more complex topics like bytecode generation proved to be no problem. 
+
+The usage of ANTLR as the combined lexer and parser generator tool was a valuable experience. Transforming the MiniC\verb|++| from EBNF to the ANTLR grammar syntax was a simple task. The algorithm used by ANTLR analyze the grammar made it possible to write the grammar without having to worry about meeting the LL(k) condition. The tooling support in the IntelliJ IDEA IDE also was very helpful in the development. 
+
+Instead of using the already existing AST for MiniC\verb|++| by Professor Dobler, a new AST was developed. While this AST took advantage of some Kotlin specific features, it proved to be subpar in terms of reducing the number of nodes, compared to the full syntax tree. For a new version, a rework of the AST is a top priority.
+
+Developing the bytecode generation, turned out to be the most difficult part. Solely relying on the specification of the JVM to understand bytecode, proved to be more difficult than expected. Instead, the \verb|javap| tool was used to analyze selected code pieces, to better the understanding of bytecode. In addition, GitHub Copilot was utilized by asking it to produce bytecode for a given Java code piece. Copilot was also able to produce Kotlin code using the ObjectWeb ASM library for the bytecode generation.
+
+Evaluating the different frontend implementations showed the strength and weaknesses of each implementation, providing valuable experience when choosing an implementation strategy the next time a compiler should be implemented.
+
+Through this thesis, a great understanding of compiler construction has been acquired. Especially in regard to the functioning of the JVM as a stack machine and bytecode. 
