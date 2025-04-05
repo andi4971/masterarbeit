@@ -185,12 +185,12 @@ Constant definitions are handled by the \verb|StaticConstDefGenerator| class. It
 \begin{KotlinCode}[float,numbers=none,caption=Code of the \texttt{StaticConstDefGenerator} class., label=lst:BtGenConstDefGen]
 class StaticConstDefGenerator(private val cw: ClassWriter) {
 
-fun generateStatic(constDef: ConstDef) {
-    constDef.entries.forEach { entry ->
-        val index = cw.newConst(entry.value.value.getValue())
-        entry.variable.index = index
+    fun generateStatic(constDef: ConstDef) {
+        constDef.entries.forEach { entry ->
+            val index = cw.newConst(entry.value.value.getValue())
+            entry.variable.index = index
+        }
     }
-}
 }
 \end{KotlinCode}
 
@@ -457,25 +457,25 @@ In the case an expression entry describes an array access, special handling need
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{putExprValuesOnStack} extension function in the \texttt{ExpressionGenerator}., label=lst:BtGenExprGenValStack]
-    private fun OrExprGenerator.putExprValuesOnStack(
-        exprEntries: List<Pair<OrExpr, AssignOperator?>>) {
-        exprEntries.filter { entry ->
-            entry.second != null
-        }.forEach {
-            if (it.first.isArrayAccess()) {
-                if (it.second == AssignOperator.ASSIGN) {
-                    ActionFactGenerator.skipLoadOfNextArray = true
-                } else {
-                    ActionFactGenerator.duplicateNextArrayIndex = true
-                }
-                this.generate(it.first)
+private fun OrExprGenerator.putExprValuesOnStack(
+    exprEntries: List<Pair<OrExpr, AssignOperator?>>) {
+    exprEntries.filter { entry ->
+        entry.second != null
+    }.forEach {
+        if (it.first.isArrayAccess()) {
+            if (it.second == AssignOperator.ASSIGN) {
+                ActionFactGenerator.skipLoadOfNextArray = true
             } else {
-                if (it.second != AssignOperator.ASSIGN) {
-                    this.generate(it.first)
-                }
+                ActionFactGenerator.duplicateNextArrayIndex = true
+            }
+            this.generate(it.first)
+        } else {
+            if (it.second != AssignOperator.ASSIGN) {
+                this.generate(it.first)
             }
         }
     }
+}
     \end{KotlinCode}
 
 
@@ -658,13 +658,15 @@ Incrementing and decrementing operations are available for variables and element
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{iIncDec} method of the \texttt{ActionFactGenerator}., label=lst:BtGenExprActionFactIncDecGen]
 private fun iIncDec(variable: Variable, incDec: IncDec) {
     if (variable.static) {
-        mv.visitFieldInsn(GETSTATIC, className, variable.ident.name, variable.type.descriptor)
+        mv.visitFieldInsn(
+            GETSTATIC, className, variable.ident.name, variable.type.descriptor)
         when (incDec) {
             IncDec.INCREASE -> mv.visitInsn(ICONST_1)
             IncDec.DECREASE -> mv.visitInsn(ICONST_M1)
         }
         mv.visitInsn(IADD)
-        mv.visitFieldInsn(PUTSTATIC, className, variable.ident.name, variable.type.descriptor)
+        mv.visitFieldInsn(
+            PUTSTATIC, className, variable.ident.name, variable.type.descriptor)
     } else {
         when (incDec) {
             IncDec.INCREASE -> mv.visitIincInsn(variable.index, 1)

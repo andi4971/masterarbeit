@@ -192,12 +192,12 @@ sealed class SyntaxTreeNode {
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{NumberNode} class inheriting from the \texttt{SyntaxTreeNode}., label=lst:ListPatNumbNode]
-  data class NumberNode(val value: Int) : SyntaxTreeNode() {
+data class NumberNode(val value: Int) : SyntaxTreeNode() {
     override fun <T> accept(visitor: SyntaxTreeVisitor<T>): <T> {
         return visitor.visitNumberNode(this)
     }
 }
-  \end{KotlinCode}
+\end{KotlinCode}
 
 
 \section{Listener-Pattern for Tree Transformation}

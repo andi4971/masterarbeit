@@ -4,8 +4,11 @@
 \begin{german}
 
 Diese Masterarbeit implementiert einen Compiler für MiniC\verb++| unter der Verwendung von Java-Technologien zur Erzeugung von Java-Bytecode. Für das Frontend wird der kombinierte Lexer- und Parsergenerator ANTLR verwendet, während das Backend die ObjectWeb ASM Bibliothek für die Bytecodegenerierung nutzt. Ähnlich zu Generatoren wie Coco-2 generiert ANTLR den Quellcode für einen Parser auf der Grundlage einer vorgegebenen Grammatik. ANTLR kann Code in mehreren Hostsprachen generieren; für diese Arbeit wurde Java gewählt. 
+
 ANTLR ist ein Open-Source-Tool für die Spracherkennung. Es wurde erstmals 1992 veröffentlicht und wird seitdem von Terrence Parr kontinuierlich weiterentwickelt. In der aktuellen Version von ANTLR wird der adaptive-LL(*)oder ALL(*)-Parsing-Algorithmus verwendet. Dieser Algorithmus führt die Grammatikanalyse zur Parse-Zeit durch und überkommt dadurch die Einschränkungen früherer Versionen. ALL(*) erfordert nicht die Angabe einer maximalen Anzahl von Lookahead-Tokens. Stattdessen passt es sich an den aktuellen Kontext an und adaptiert die Anzahl der Lookahead-Token entsprechend.
+
 Um einen abstrakten Syntaxbaum (AST) mit ANTLR zu erzeugen, werden drei Methoden unterstützt: Das Visitor-Pattern, das Listener-Pattern und die Verwendung einer attributierten Grammatik (ATG). Das Compiler-Frontend wird mit allen drei Methoden implementiert. Die drei Implementierungen werden in mehreren Aspekten verglichen und auf dieser Grundlage wird eine Empfehlung ausgesprochen.
+
 ObjectWeb ASM ist eine in Java geschriebene Bibliothek zur Erzeugung von Java-Bytecode. Sie ist Open-Source und wird seit 2002 von Eric Bruneton entwickelt. Die Bibliothek wird in Compilern verwendet, die Java-Bytecode ausgeben, wie z.B. dem Kotlin-Compiler. Zur Generierung von Bytecode wird die auf dem Visitor-Pattern basierende API verwendet. 
 
 Alle drei Frontend-Implementierungen sind mit dem Backend zu einer Anwendung verbunden, die Java-Bytecode aus MiniC\verb|++|-Code erzeugen kann. 

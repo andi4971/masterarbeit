@@ -48,7 +48,7 @@ BLOCK_COMMENT:  '/*' .*? '*/' -> skip;
 The top rules of the grammar are shown in listing \ref{lst:ANTLRMiniCppTop}. The root rule \texttt{miniCpp} contains zero or more elements of the rule \texttt{miniCppEntry} followed by the terminal symbol \texttt{EOF}. \texttt{EOF} is a default terminal symbol provided by ANTLR signaling the end of the file. \texttt{miniCppEntry} defines the elements that can be used at the top level of the miniC\verb|++| source file. These are variable and constant definitions, function declarations and definitions. \texttt{SEM} is the lexical rule defining a semicolon. 
 
 \begin{AntlrCode}[float,numbers=none,caption=Top rules of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppTop]
-miniCpp:     (miniCppEntry)* EOF;
+miniCpp:          (miniCppEntry)* EOF;
 miniCppEntry:     constDef
                 | varDef
                 | funcDecl
@@ -121,8 +121,8 @@ A part of the grammar for expressions is shown in listing \ref{lst:ANTLRMiniCppE
 
 
 \begin{AntlrCode}[float,numbers=none,caption=Expression rules for assignment and boolean operations of the MiniC++ ANTLR grammar., label=lst:ANTLRMiniCppExprBool]
-expr:                 orExpr (exprEntry)*;
-exprEntry:            exprAssign orExpr;
+expr:               orExpr (exprEntry)*;
+exprEntry:          exprAssign orExpr;
 exprAssign:           EQUAL      #EqualAssign
                     | ADD_ASSIGN #AddAssign
                     | SUB_ASSIGN #SubAssign
@@ -354,7 +354,7 @@ class BlockListener(private val blockEntryListener: BlockEntryListener,
     
     fun getBlock(): Block {
         return blocks.removeLast()
-}
+    }
 }
     \end{KotlinCode}
 
@@ -363,15 +363,15 @@ The code for adding a block entry to the stack is shown in \ref{lst:ListenerBloc
 
 
 \begin{KotlinCode}[float,numbers=none,caption=Implementation of the \texttt{exitBlockEntry} method., label=lst:ListenerBlockEntryExit]
-    override fun exitBlockEntry(ctx: minicppParser.BlockEntryContext) {
-        val entry = when {
-            ctx.stat() != null -> statListener.getStat()
-            ctx.varDef() != null -> varDefListener.getVarDef()
-            ctx.constDef() != null -> constDefListener.getConstDef()
-            else -> throw IllegalStateException("Unknown block entry")
-        }
-        blockEntries.add(entry)
+override fun exitBlockEntry(ctx: minicppParser.BlockEntryContext) {
+    val entry = when {
+        ctx.stat() != null     -> statListener.getStat()
+        ctx.varDef() != null   -> varDefListener.getVarDef()
+        ctx.constDef() != null -> constDefListener.getConstDef()
+        else -> throw IllegalStateException("Unknown block entry")
     }
+    blockEntries.add(entry)
+}
 \end{KotlinCode}
 
 For the management of variables and functions, the \verb|Scope| class is used, same as in the visitor based implementation. For the communication between listeners, the \verb|ScopeHandler| class is used. The code of this class is shown in listing \ref{lst:ListenerScopeHandler}. Fundamentally, the \verb|ScopeHandler| manages a stack of \verb|Scope| instances. The \verb|init| block instantiates the root scope. The \verb|pushChildScope| method instantiates a new child scope and puts it onto the stack. Whenever a variable or function needs to be added, the current scope can be retrieved via the \verb|getScope| method. The \verb|ScopeHandler| instance is the same over the entire AST generation. All listeners that need to interact with the scope have access to the same instance. 
